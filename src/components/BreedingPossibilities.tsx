@@ -1,0 +1,121 @@
+import React from 'react';
+import { UserMonster } from '../types/monster';
+import { BreedingCalculator } from '../utils/breedingCalculator';
+import { Heart, AlertCircle, CheckCircle } from 'lucide-react';
+
+interface BreedingPossibilitiesProps {
+  userMonsters: UserMonster[];
+}
+
+export const BreedingPossibilities: React.FC<BreedingPossibilitiesProps> = ({ userMonsters }) => {
+  const calculator = new BreedingCalculator(userMonsters);
+  const possibilities = calculator.getAllPossibilities();
+
+  if (userMonsters.length === 0) {
+    return (
+      <div className="breeding-possibilities empty">
+        <div className="empty-state">
+          <AlertCircle size={48} />
+          <h2>No Monsters in Collection</h2>
+          <p>Add some monsters to your collection to see breeding possibilities!</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (possibilities.length === 0) {
+    return (
+      <div className="breeding-possibilities empty">
+        <div className="empty-state">
+          <AlertCircle size={48} />
+          <h2>No Breeding Possibilities</h2>
+          <p>None of your current monsters can breed together. Try adding more monsters to your collection!</p>
+        </div>
+      </div>
+    );
+  }
+
+  const validPossibilities = possibilities.filter(p => p.hasValidGenders);
+  const invalidPossibilities = possibilities.filter(p => !p.hasValidGenders);
+
+  return (
+    <div className="breeding-possibilities">
+      <div className="possibilities-header">
+        <Heart size={24} />
+        <h2>Breeding Possibilities</h2>
+        <p>Here are all the monsters you can breed from your current collection:</p>
+      </div>
+
+      {validPossibilities.length > 0 && (
+        <div className="possibilities-section">
+          <h3>
+            <CheckCircle size={20} />
+            Ready to Breed ({validPossibilities.length})
+          </h3>
+          <div className="possibilities-grid">
+            {validPossibilities.map((possibility, index) => (
+              <div key={index} className="possibility-card valid">
+                <div className="breeding-combination">
+                  <div className="parent">
+                    <span className="monster-name">{possibility.parent1Name}</span>
+                  </div>
+                  <div className="breeding-symbol">+</div>
+                  <div className="parent">
+                    <span className="monster-name">{possibility.parent2Name}</span>
+                  </div>
+                  <div className="breeding-symbol">=</div>
+                  <div className="result">
+                    <span className="monster-name result-name">{possibility.resultName}</span>
+                  </div>
+                </div>
+                <div className="possibility-status">
+                  <CheckCircle size={16} className="status-icon valid" />
+                  <span>Can breed</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {invalidPossibilities.length > 0 && (
+        <div className="possibilities-section">
+          <h3>
+            <AlertCircle size={20} />
+            Need Male & Female ({invalidPossibilities.length})
+          </h3>
+          <div className="possibilities-grid">
+            {invalidPossibilities.map((possibility, index) => (
+              <div key={index} className="possibility-card invalid">
+                <div className="breeding-combination">
+                  <div className="parent">
+                    <span className="monster-name">{possibility.parent1Name}</span>
+                  </div>
+                  <div className="breeding-symbol">+</div>
+                  <div className="parent">
+                    <span className="monster-name">{possibility.parent2Name}</span>
+                  </div>
+                  <div className="breeding-symbol">=</div>
+                  <div className="result">
+                    <span className="monster-name result-name">{possibility.resultName}</span>
+                  </div>
+                </div>
+                <div className="possibility-status">
+                  <AlertCircle size={16} className="status-icon invalid" />
+                  <span>Need male & female</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="possibilities-summary">
+        <p>
+          <strong>Total possibilities:</strong> {possibilities.length} 
+          ({validPossibilities.length} ready to breed, {invalidPossibilities.length} need proper genders)
+        </p>
+      </div>
+    </div>
+  );
+};

@@ -1,0 +1,911 @@
+Result,Parent 1, Parent 2
+Almiraj,Any Beast,Any Dragon
+Antbear,Saccer,Any Dragon
+Arrowdog,Any Beast,PutrePup
+Beastnite,CatMage,Any Devil
+Beastnite,MadGopher,Dumbira
+Beastnite,Any Beast,EvilArmor
+Beavern,Any Beast,Any Water
+BigEye,Any Beast,Drygon
+BigEye,Any Beast,EyeBall
+Catfly,Any Beast,Any Bird
+Catmage,CatFly,1EyeClown
+Catmage,CatFly,CatMage
+Catmage,CatFly,EvilWand
+Catmage,CatFly,MimeSlime
+Catmage,CatFly,Reaper
+Catmage,CatFly,Sickler
+Catmage,CatFly,TreeBoy
+Darkhorn,Any Beast,Any Boss
+Dumbira,SuperTen,BeastNite
+Dumbira,SuperTen,Bubblemon
+Dumbira,NoctoKing,Gigantes
+Dumbira,SuperTen,Lizardman
+Dumbira,SuperTen,MerTiger
+Dumbira,SuperTen,Orc
+Dumbira,SuperTen,SabreMan
+Dumbira,SuperTen,Walrusman
+Fairyrat,Any Beast,LizardFly
+Goategon,Any Beast,DrakSlime
+Goategon,Any Beast,LizardMan
+Gorago,DarkHorn,Any Boss
+Gorago,DarkHorn,Orochi
+Grizzly,Any Beast,Any Devil
+Grizzly,Any Beast,Golem
+Grizzly,Any Beast,IceMan
+Grizzly,Any Beast,LavaMan
+Grizzly,Any Beast,MetalDrak
+Grizzly,Any Beast,Roboster
+Grizzly,Any Beast,StoneMan
+Gulpbeast,Grizzly,Any Devil
+Gulpbeast,BigEye,Any Dragon
+Gulpbeast,Dumbira,Any Dragon
+Gulpbeast,Grizzly,Any Dragon
+Gulpbeast,Trumpeter,Any Dragon
+Gulpbeast,Yeti,Any Dragon
+Gulpbeast,Tonguella,DeadNoble
+Gulpbeast,Yeti,DeadNoble
+Gulpbeast,Tonguella,Digster
+Gulpbeast,Trumpeter,Digster
+Gulpbeast,Goategon,Golem
+Gulpbeast,Trumpeter,Golem
+Gulpbeast,Goategon,IceMan
+Gulpbeast,Trumpeter,IceMan
+Gulpbeast,Goategon,LavaMan
+Gulpbeast,Trumpeter,LavaMan
+Gulpbeast,Dumbira,MetalDrak
+Gulpbeast,IronTurt,MetalDrak
+Gulpbeast,Goategon,Roboster
+Gulpbeast,Trumpeter,Roboster
+Gulpbeast,Tonguella,Skeletor
+Gulpbeast,WildApe,Skeletor
+Gulpbeast,Grizzly,Skullgon
+Gulpbeast,Tonguella,Skullgon
+Gulpbeast,Goategon,StoneMan
+Gulpbeast,Trumpeter,StoneMan
+Gulpbeast,Tonguella,WhiteKing
+Gulpbeast,Unicorn,WhiteKing
+Hammerman,Any Beast,Stubsuck
+Ironturt,Any Beast,Tortragon
+Kingleo,Trumpeter,Balzak
+Kingleo,Trumpeter,BossTroll
+Kingleo,Trumpeter,GoldGolem
+Kingleo,Trumpeter,MetalDrak
+Kingleo,Trumpeter,Trumpeter
+Madcat,Any Beast,Dragon
+Madcat,CatMage,Goategon
+Madcat,CatMage,Unicorn
+Madgopher,Any Beast,SabreMan
+Mommonja,Any Beast,DuckKite
+Noctoking,ArrowDog,Dracky
+Noctoking,ArrowDog,Shadow
+Pillowrat,Any Beast,Any Plant
+Saccer,Any Beast,Any Bug
+Skullroo,Any Beast,Any Zombie
+Superten,Dumbira,Any Slime
+Superten,GulpBeast,CopyCat
+Superten,GulpBeast,Demonite
+Superten,GulpBeast,FaceTree
+Superten,GulpBeast,FangSlime
+Superten,GulpBeast,FunkyBird
+Superten,GulpBeast,Gremlin
+Superten,GulpBeast,JewelBag
+Superten,GulpBeast,Lipsy
+Superten,GulpBeast,MadDragon
+Superten,GulpBeast,MadPlant
+Superten,GulpBeast,Mimic
+Superten,Any Beast,Mudron
+Superten,Tonguella,TreeSlime
+Tonguella,Any Beast,Any Slime
+Trumpeter,SuperTen,Any Dragon
+Trumpeter,GulpBeast,Balzak
+Trumpeter,GulpBeast,Golem
+Trumpeter,GulpBeast,IceMan
+Trumpeter,Tonguella,LandOwl
+Trumpeter,GulpBeast,LavaMan
+Trumpeter,Grizzly,MadCondor
+Trumpeter,GulpBeast,MetalDrak
+Trumpeter,GulpBeast,Roboster
+Trumpeter,GulpBeast,StoneMan
+Trumpeter,GulpBeast,WhipBird
+Trumpeter,WildApe,WildApe
+Trumpeter,Yeti,ZapBird
+Unicorn,Goategon,Any Slime
+Unicorn,Grizzly,Any Slime
+Unicorn,GulpBeast,Any Slime
+Unicorn,Tonguella,Any Slime
+Unicorn,Trumpeter,Any Slime
+Unicorn,WildApe,Any Slime
+Unicorn,Yeti,Any Slime
+Unicorn,Any Beast,FangSlime
+Wildape,Almiraj,Any Dragon
+Wildape,Any Beast,MadPecker
+Windbeast,CatFly,Any Bird
+Windbeast,Any Beast,Any Material
+Yeti,MadCat,BattleRex
+Yeti,Dumbira,Blizzardy
+Yeti,Goategon,Gasgon
+Yeti,MadCat,MadDragon
+Yeti,Any Beast,Orc
+Yeti,IronTurt,Pteranod
+Yeti,MadCat,SkyDragon
+Yeti,WildApe,Swordgon
+Aquahawk,Any Bird,Any Water
+Azurile,RainHawk,Any Boss
+Azurile,Shantak,GoldGolem
+Bigroost,-----,-----
+Blizzardy,Any Bird,SuperTen
+Blizzardy,Any Bird,Yeti
+Blizzardy,Any Bird,WhiteKing
+Blizzardy,Any Bird,Trumpeter
+Blizzardy,Any Bird,Skullgon
+Blizzardy,Any Bird,Skeletor
+Blizzardy,Any Bird,Servant
+Blizzardy,Any Bird,Metaly
+Blizzardy,Any Bird,Metabble
+Blizzardy,Any Bird,IceMan
+Blizzardy,Any Bird,Goategon
+Blizzardy,Any Bird,DeadNoble
+Bullbird,Any Bird,Any Beast
+Cragdevil,BigRoost,Any Beast
+Cragdevil,Emyu,Any Beast
+Cragdevil,MadGoose,Any Beast
+Dracky,Picky,Any Slime
+Duckkite,Any Bird,Any Bug
+Emyu,MadPecker,BigEye
+Emyu,MadPecker,DarkEye
+Emyu,MadCondor,MadPecker
+Emyu,KiteHawk,Any Beast
+Florajay,Any Bird,Any Plant
+Funkybird,Any Bird,Brushead
+Funkybird,Any Bird,DanceVegi
+Funkybird,Any Bird,Pyuro
+Funkybird,Any Bird,TropicGel
+Garudian,Blizzardy,Lionex
+Garudian,ZapBird,Lionex
+Garudian,Phoenix,Lionex
+Garudian,FunkyBird,Jamirus
+Kitehawk,DuckKite,Any Material
+Kitehawk,Any Bird,Facer
+Landowl,BullBird,Any Devil
+Landowl,Garudian,Any Slime
+Landowl,BullBird,Grizzly
+Madcondor,LandOwl,Any Devil
+Madcondor,Any Bird,CoilBird
+Madcondor,KiteHawk,BigRoost
+Madgoose,Wyvern,Any Dragon
+Madgoose,CragDevil,MadRaven
+Madgoose,CragDevil,DuckKite
+Madgoose,Any Bird,Droll
+Madgoose,Phoenix,Any Zombie
+Madgoose,MadCondor,Any Zombie
+Madgoose,LandOwl,Any Zombie
+Madpecker,Any Bird,Any Devil
+Madraven,Any Bird,Any Zombie
+Mistywing,Any Bird,Any Material
+Phoenix,Any Bird,ArcDemon
+Phoenix,Any Bird,CopyCat
+Phoenix,Any Bird,DrakSlime
+Phoenix,Any Bird,Gismo
+Phoenix,Any Bird,Grizzly
+Phoenix,Any Bird,GulpBeast
+Phoenix,Any Bird,IronTurt
+Phoenix,Any Bird,LavaMan
+Picky,Any Bird,Any Slime
+Rainhawk,Blizzardy,Vampirus
+Rainhawk,Blizzardy,Phoenix
+Shantak,WhipBird,GreatDrak
+Shantak,WhipBird,Jamirus
+Stubbird,Any Bird,RockSlime
+Whipbird,Any Bird,Rayburn
+Whipbird,ZapBird,StoneMan
+Whipbird,Any Bird,SnakeBat
+Whipbird,MadGoose,SlimeBorg
+Whipbird,LandOwl,RockSlime
+Whipbird,Blizzardy,MetalDrak
+Whipbird,ZapBird,Merman
+Whipbird,ZapBird,Golem
+Whipbird,MadCondor,Digster
+Wyvern,Any Bird,Any Dragon
+Zapbird,Any Bird,Any Boss
+Zapbird,MadCondor,Gismo
+Zapbird,Phoenix,Gismo
+Zapbird,WhipBird,Gismo
+Asurazoma,Zoma,PsychoPiz
+Baramos,Hargon,Orochi
+Darck,-----,-----
+Darkdrium,DeathMore3,AsuraZoma
+Darkdrium,DeathMore3,GranSlime
+Darkdrium,DeathMore3,Watabou
+Deathmore1,Mirudraas1,Azurile
+Deathmore2,DeathMore1,Titanis
+Deathmore3,Mirudraas2,Zoma
+Deathmore3,DeathMore2,DarkMate
+Deathmore3,DeathMore1,Armorpion
+Deathmore4,DeathMore2,Mudou
+Deathmore5,Zoma,Mirudraas1
+Deathmore5,DeathMore2,Poseidon
+Deathmore6,Zoma,Mirudraas2
+Deathmore7,Zoma,Azurile
+Dracolord1,Servant,Andreal
+Dracolord2,DracoLord1,Divinegon
+Dracolord3,Servant,GreatDrak
+Esterk,Pizzaro,KingLeo
+Esterk,Pizzaro,Gorago
+Genosidoh,Sidoh,Titanis
+Hargon,WhiteKing,MetalKing
+LordDraco,DracoLord2,Orligon
+Mirudraas1,Esterk,GoldSlime
+Mirudraas2,Mirudraas1,Orligon
+Mirudraas3,Mirudraas1,Spikerous
+Mudou,Baramos,Gorago
+Mudou,Baramos,DarkHorn
+Orgodemir1,PsychoPiz,Niterich
+Orgodemir2,Orgodemir,LordDraco
+Orgodemir3,Orgodemir,GigaDraco
+Pizzaro,Durran,Divinegon
+Psychopiz,Pizzaro,Esterk
+Sidoh,Jamirus,Rosevine
+Zoma,DracoLord1,Sidoh
+Zoma,DracoLord2,Sidoh
+Armorpede,GiantWorm,Any Material
+Armorpede,Any Bug,IronTurt
+Armorpede,MultiEyes,RockSlime
+Armorpede,MultiEyes,Tortragon
+Armorpede,Droll,Any Dragon
+Armorpion,WarMantis,CancerMan
+Armorpion,HornBeet,Hornbeet
+Armorpion,WarMantis,Octoraid
+Armorpion,WarMantis,RogueNite
+Armyant,GiantSlug,Any Slime
+Armycrab,Any Bug,Cancerman
+Armycrab,Any Bug,DarkCrab
+Belzebub,MultiEyes,Pyuro
+Belzebub,MadHornet,GoHopper
+Belzebub,MultiEyes,ButterFly
+Belzebub,MadHornet,Any Zombie
+Butterfly,Any Bug,Any Bird
+Catapila,Any Bug,Any Dragon
+Digster,Any Bug,Any Boss
+Digster,ArmyCrab,Clawster
+Droll,Lipsy,Any Slime
+Droll,Lipsy,Angleron
+Droll,Lipsy,Aquarella
+Droll,ButterFly,ButterFly
+Droll,Eyeder,Eyeder
+Droll,Lipsy,Octokid
+Droll,Any Bug,Spooky
+Droll,TailEater,TailEater
+Eyeder,Any Bug,Octoreach
+Eyeder,Any Bug,Gamanian
+Eyeder,Catapila,Any Beast
+Eyeder,Any Bug,Amberweed
+Giantmoth,ButterFly,Any Devil
+Giantmoth,Any Bug,RayGigas
+Giantmoth,Any Bug,Saccer
+Giantslug,Any Bug,Any Slime
+Giantworm,Any Bug,Any Devil
+Gohopper,-----,-----
+Gophecada,Any Bug,Any Beast
+Hornbeet,ArmorPede,Any Devil
+Hornbeet,WarMantis,Any Devil
+Hornbeet,StagBug,StagBug
+Lipsy,Any Bug,Any Zombie
+Madhornet,Any Bug,FairyRat
+Madhornet,ButterFly,Pyuro
+Madhornet,Eyeder,Any Zombie
+Madhornet,Droll,Any Zombie
+Madhornet,Pyuro,Any Zombie
+MultiEyes,TailEater,Any Devil
+MultiEyes,Catapila,Butterfly
+MultiEyes,Catapila,Catapila
+Pyuro,Any Bug,Any Water
+Sickler,Any Bug,1EyeClown
+Sickler,Any Bug,Reaper
+Sickler,WarMantis,Any Slime
+Skularach,Armorpion,WhiteKing
+Stagbug,Any Bug,Any Material
+Taileater,WeedBug,Any Plant
+Taileater,WeedBug,Anemon
+Taileater,Any Bug,FloraMan
+Warmantis,Sickler,Any Devil
+Weedbug,Any Bug,Any Plant
+1EyeClown,EyeBall,Any Slime
+1EyeClown,Pixy,Any Slime
+1EyeClown,Demonite,Any Slime
+Agdevil,Evilbeast,Any Dragon
+Agdevil,Gremlin,Any Dragon
+Agdevil,MedusaEye,Any Dragon
+Agdevil,SkulRider,Any Dragon
+Akubar,Grendal,Grendal
+Akubar,ArcDemon,GateGuard
+Arcdemon,Gigantes,Garudian
+Arcdemon,Gigantes,ZapBird
+Arcdemon,Gigantes,WhipBird
+Arcdemon,Gigantes,Trumpeter
+Arcdemon,AgDevil,SpotKing
+Arcdemon,Gigantes,Orochi
+Arcdemon,Gigantes,MetalKing
+Arcdemon,Gigantes,MetalDrak
+Arcdemon,Grendal,KingSlime
+Arcdemon,Gigantes,KingLeo
+Arcdemon,Gigantes,GreatDrak
+Arcdemon,Gigantes,Andreal
+Arcdemon,GateGuard,Any Zombie
+Arcdemon,Ogre,Any Dragon
+Arcdemon,Any Devil,Any Boss
+Bosstroll,Ogre,StoneMan
+Bosstroll,Centasaur,WalrusMan
+Bosstroll,Centasaur,GreatDrak
+Bosstroll,Centasaur,Balzak
+Bosstroll,GoatHorn,Any Beast
+Bubblemon,Any Devil,Any Water
+Centasaur,BossTroll,Any Beast
+Centasaur,GateGuard,Any Beast
+Centasaur,Ogre,Any Beast
+Centasaur,ArcDemon,Any Dragon
+Chopclown,1EyeClown,1EyeClown
+Chopclown,Lionex,MimeSlime
+Darkeye,Any Devil,Any Plant
+Demonite,Any Devil,Any Bird
+Durran,Centasaur,GoldGolem
+Durran,Jamirus,Serpentia
+Evilarmor,ArcDemon,Any Material
+Evilarmor,GateGuard,Any Material
+Evilarmor,Ogre,Any Material
+Evilarmor,Any Devil,ArmorPede
+Evilbeast,Any Devil,Any Material
+Evilwell,BossTroll,IceMan
+Evilwell,Ogre,LavaMan
+Eyeball,Any Devil,Any Bug
+Gateguard,Gigantes,MistyWing
+Gateguard,Gigantes,Rosevine
+Gateguard,Gigantes,Skullgon
+Gateguard,AgDevil,SlimeBorg
+Gateguard,Grendal,Swordgon
+Gateguard,Gigantes,WhiteKing
+Gateguard,Ogre,Any Zombie
+Gateguard,Gigantes,GiantMoth
+Gateguard,Gigantes,MadCondor
+Gateguard,Gigantes,AxeShark
+Gateguard,Gigantes,Coatol
+Gateguard,Demonite,Demonite
+Gateguard,Gigantes,DeadNoble
+Gigantes,EvilBeast,Any Zombie
+Gigantes,MedusaEye,Any Zombie
+Gigantes,SkulRider,Any Zombie
+Gigantes,Any Devil,BigEye
+Goathorn,ArcDemon,Any Beast
+Goathorn,Any Devil,DarkHorn
+Gremlin,Any Devil,Any Beast
+Grendal,EvilBeast,Any Beast
+Grendal,Gremlin,Any Beast
+Grendal,MedusaEye,Any Beast
+Grendal,SkulRider,Any Beast
+Grendal,Any Devil,BeastNite
+Grendal,Any Devil,MadDragon
+Jamirus,Akubar,RainHawk
+Lampgenie,Centasaur,Any Boss
+Lionex,ArcDemon,Garudian
+Lionex,Any Devil,LizardMan
+Lionex,ArcDemon,Any Zombie
+Madknight,Any Devil,RogueNite
+Medusaeye,Any Devil,Any Dragon
+Medusaeye,1EyeClown,Any Zombie
+Medusaeye,Gremlin,Aquarella
+Medusaeye,DarkEye,Octoreach
+Ogre,AgDevil,GulpBeast
+Ogre,Gigantes,WalrusMan
+Ogre,Grendal,Unicorn
+Ogre,Gigantes,Roboster
+Ogre,Gigantes,MerTiger
+Ogre,Any Devil,HammerMan
+Ogre,Gigantes,Digster
+Ogre,GateGuard,Any Dragon
+Orc,Any Devil,BeanMan
+Pixy,Any Devil,Any Slime
+Skulrider,Any Devil,Any Zombie
+Titanis,Durran,DarkHorn
+Andreal,SkyDragon,ArcDemon
+Andreal,SkyDragon,Akubar
+Andreal,MadDragon,Trumpeter
+Andreal,SkyDragon,Ogre
+Andreal,BattleRex,MadCondor
+Andreal,SkyDragon,Lionex
+Andreal,Any Dragon,Gulpple
+Andreal,SkyDragon,Golem
+Andreal,SkyDragon,GoatHorn
+Andreal,Gasgon,Goategon
+Andreal,SkyDragon,FunkyBird
+Andreal,SkyDragon,DeadNoble
+Battlerex,Any Dragon,EvilArmor
+Battlerex,Any Dragon,KingLeo
+Battlerex,Any Dragon,Lionex
+Battlerex,Any Dragon,MadKnight
+Battlerex,Any Dragon,Ogre
+Chamelgon,Any Dragon,Voodoll
+Coatol,BattleRex,StoneMan
+Coatol,WingSnake,WingSnake
+Coatol,Vampirus,WhipBird
+Coatol,SkyDragon,WhipBird
+Coatol,Gasgon,MadKnight
+Coatol,Pteranod,DarkHorn
+Coatol,LizardMan,CopyCat
+Crestpent,Any Dragon,BigRoost
+Divinegon,SkyDragon,Orochi
+Divinegon,SkyDragon,Serpentia
+Dragon,DragonKid,DragonKid
+Dragonkid,Any Dragon,Any Slime
+Drygon,Any Dragon,Any Water
+Fairydrak,Any Dragon,Any Bug
+Gasgon,Any Dragon,Any Plant
+Gigadraco,Andreal,BossTroll
+Gigadraco,BattleRex,Gigantes
+Gigadraco,GreatDrak,Gigantes
+Gigadraco,SkyDragon,Gigantes
+Greatdrak,Any Dragon,ZapBird
+Greatdrak,Any Dragon,WhipBird
+Greatdrak,Any Dragon,Unicorn
+Greatdrak,Any Dragon,SpotKing
+Greatdrak,Any Dragon,Gigantes
+Greatdrak,Any Dragon,MetalKing
+Greatdrak,DragonKid,DragonKid
+Greatdrak,Dragon,Dragon
+Greatdrak,Any Dragon,Centasaur
+Greatdrak,Any Dragon,BattleRex
+Greatdrak,Any Dragon,KingSlime
+Kingcobra,Any Dragon,Babble
+Lizardfly,Any Dragon,GoHopper
+Lizardman,Any Dragon,Any Devil
+Maddragon,Gasgon,Any Beast
+Maddragon,Any Dragon,GulpBeast
+Minidrak,Any Dragon,Picky
+Orligon,Divinegon,GigaDraco
+Orligon,Divinegon,GoldGolem
+Orochi,Any Dragon,Any Boss
+Orochi,Andreal,MedusaEye
+Orochi,GreatDrak,MedusaEye
+Poisongon,Any Dragon,Any Zombie
+Pteranod,Any Dragon,Any Bird
+Rayburn,LizardMan,WingSlime
+Rayburn,LizardMan,Trumpeter
+Rayburn,LizardMan,Gigantes
+Rayburn,Any Dragon,MadCondor
+Rayburn,LizardMan,MadCat
+Rayburn,LizardMan,GoatHorn
+Rayburn,LizardMan,GateGuard
+Rayburn,LizardMan,FaceTree
+Rayburn,LizardMan,Lionex
+Serpentia,GreatDrak,Lionex
+Serpentia,GreatDrak,Octoraid
+Serpentia,GreatDrak,Skeletor
+Skydragon,Any Dragon,Phoenix
+Snakebat,Any Dragon,CatFly
+Snakebat,KingCobra,Dracky
+Spikerous,Any Dragon,ArmyCrab
+Spikerous,Any Dragon,Digster
+Swordgon,Any Dragon,Any Material
+Tortragon,Any Dragon,Any Beast
+Vampirus,Any Dragon,MadGoose
+Vampirus,Pteranod,Pteranod
+Wingsnake,Crestpent,Crestpent
+Balzak,IceMan,Any Devil
+Balzak,LavaMan,Any Devil
+Balzak,Any Material,Any Boss
+Bombcrag,DarkMate,Any Bug
+Bombcrag,Roboster,Any Bug
+Bombcrag,SpikyBoy,SpikyBoy
+Brushead,Any Material,Any Water
+Brushead,Puppetor,Demonite
+Brushead,Puppetor,Pixy
+Cloudking,Gismo,LampGenie
+Cloudking,Gismo,WhiteKing
+Cloudking,Gismo,WhaleMage
+Cloudking,Gismo,SpotKing
+Cloudking,Gismo,SkyDragon
+Cloudking,Gismo,KingSquid
+Cloudking,Gismo,KingSlime
+Cloudking,Gismo,DracoLord1
+Coilbird,Any Material,Any Bird
+Curselamp,Roboster,Any Bird
+Curselamp,Roboster2,Any Bird
+Curselamp,Any Material,WingTree
+Darkmate,GoldGolem,MetalKing
+Evilpot,Mimic,Scallopa
+Evilpot,Any Material,Snaily
+Evilpot,Gismo,Any Devil
+Evilwand,Any Material,Any Dragon
+Exaucers,Any Material,Dracky
+Facer,Any Material,Any Plant
+Gismo,Goopi,Anemon
+Gismo,MadCandle,DrakSlime
+Gismo,Goopi,EvilSeed
+Gismo,Goopi,FireWeed
+Gismo,Goopi,MistyWing
+Gismo,Goopi,Phoenix
+Gismo,MadMirror,Wyvern
+Goldgolem,LavaMan,BossTroll
+Goldgolem,IceMan,LavaMan
+Golem,MudDoll,MudDoll
+Goopi,JewelBag,Any Material
+Iceman,Roboster,KingLeo
+Iceman,Roboster2,KingLeo
+Iceman,MetalDrak,Skullgon
+Iceman,MetalDrak,WhiteKing
+Jewelbag,Any Material,Any Slime
+Lavaman,MetalDrak,ZapBird
+Lavaman,MetalDrak,Orochi
+Lavaman,MetalDrak,KingLeo
+Lavaman,MetalDrak,BossTroll
+Lavaman,MetalDrak,ArcDemon
+Lavaman,MetalDrak,Centasaur
+Madcandle,Any Material,Any Beast
+Madmirror,Any Material,Any Devil
+Metaldrak,Roboster,Any Dragon
+Metaldrak,Any Material,Andreal
+Metaldrak,StoneMan,GreatDrak
+Metaldrak,Roboster2,MetalDrak
+Metaldrak,StoneMan,Spikerous
+Mimic,Roboster,Any Zombie
+Mimic,Any Material,BoxSlime
+Mimic,Roboster,RushFish
+Muddoll,Goopi,Cancerman
+Muddoll,Goopi,Goopi
+Protomech,RogueNite,Any Devil
+Protomech,Roboster,Any Slime
+Protomech,Roboster2,Any Slime
+Protomech,Any Material,EvilArmor
+Puppetor,Any Material,Gremlin
+Roboster,SabreMan,Unicorn
+Roboster,Any Material,Trumpeter
+Roboster,SabreMan,SlimeBorg
+Roboster,Any Material,SkulRider
+Roboster,SabreMan,Skeletor
+Roboster,Any Material,GulpBeast
+Roboster,SabreMan,Ogre
+Roboster,Any Material,Grizzly
+Roboster,SabreMan,Grendal
+Roboster,SabreMan,GreatDrak
+Roboster,SabreMan,EvilArmor
+Roboster,SabreMan,DeadNoble
+Roboster,Any Material,KingLeo
+Roboster2,Roboster,Roboster
+Roguenite,Any Material,Any Zombie
+Sabreman,Voodoll,MadGoose
+Sabreman,Golem,Phoenix
+Sabreman,EvilWand,LandOwl
+Sabreman,Any Material,GiantWorm
+Sabreman,StoneMan,FunkyBird
+Spikyboy,Any Material,Any Bug
+Stoneman,Any Material,Digster
+Stoneman,Golem,Golem
+Stoneman,Any Material,HornBeet
+Voodoll,Puppetor,Any Devil
+Voodoll,Golem,DrakSlime
+Voodoll,Any Material,Lipsy
+Voodoll,StoneMan,RockSlime
+Voodoll,StoneMan,SlimeNite
+Voodoll,StoneMan,Snaily
+Amberweed,Any Plant,Any Material
+Beanman,Eggplaton,Any Devil
+Beanman,Any Plant,PillowRat
+Beanman,Any Plant,FishRider
+Cactiball,Any Plant,Any Bug
+Dancevegi,MadPlant,Any Beast
+Dancevegi,Any Plant,Facer
+Devipine,Any Plant,Gulpple
+Egdracil,RoseVine,Gigantes
+Eggplaton,Any Plant,Aquarella
+Eggplaton,Any Plant,Droll
+Eggplaton,Any Plant,Lipsy
+Evilseed,Any Plant,DarkEye
+Evilseed,Any Plant,RockSlime
+Evilseed,Any Plant,MadMirror
+Evilseed,Any Plant,KiteHawk
+Evilseed,Any Plant,Gamanian
+Evilseed,Any Plant,Eyeder
+Evilseed,Any Plant,EyeBall
+Evilseed,Any Plant,DuckKite
+Evilseed,Any Plant,ButterFly
+Evilseed,Any Plant,BigEye
+Evilseed,Eggplaton,Any Zombie
+Facetree,HerbMan,Any Dragon
+Facetree,Any Plant,NiteWhip
+Facetree,GhosTree,Snapper
+Fireweed,Any Plant,Any Dragon
+Floraman,Any Plant,Any Beast
+FooHero,TreeBoy,BeastNite
+FooHero,TreeBoy,HammerMan
+FooHero,TreeBoy,SlimeNite
+Ghostree,Stubsuck,Any Zombie
+Ghostree,Stubsuck,Puppetor
+Gulpple,Any Plant,Any Devil
+Herbman,DanceVegi,Any Devil
+Herbman,Any Plant,FunkyBird
+Madplant,Any Plant,Any Slime
+Maneater,EvilSeed,EvilSeed
+Maneater,EvilSeed,Slurperon
+Oniono,Any Plant,Anemon
+Oniono,Any Plant,Gophecada
+Rosevine,Any Plant,Any Boss
+Slurperon,Any Plant,Any Water
+Snapper,ManEater,ManEater
+Stubsuck,AmberWeed,Any Beast
+Stubsuck,GhosTree,GhosTree
+Toadstool,Any Plant,Any Zombie
+Treeboy,FooHero,EvilWand
+Treeboy,Any Plant,Pixy
+Warubou,-----,-----
+Watabou,Warubou,Watabou (DWM1)
+Wingtree,Any Plant,Any Bird
+Babble,Any Slime,GiantMoth
+Babble,Any Slime,Poisongon
+Babble,Any Slime,Any Zombie
+Boxslime,Any Slime,Any Material
+Drakslime,Any Slime,Any Dragon
+Fangslime,Any Slime,Almiraj
+Fangslime,Any Slime,DarkHorn
+Fangslime,Any Slime,GulpBeast
+Fangslime,Any Slime,KingLeo
+Fangslime,Any Slime,MadCat
+Fangslime,Any Slime,Trumpeter
+Goldslime,KingSlime,GoldGolem
+Goldslime,WonderEgg,MetalKing
+Goldslime,MetalKing,MetalKing
+Goldslime,SpotKing,GoldGolem
+Goldslime,MetalKing,GoldGolem
+Granslime,GoldSlime,DarkMate
+Granslime,GoldSlime,DeathMore1
+Granslime,GoldSlime,GoldSlime
+Granslime,WonderEgg,GoldSlime
+Haloslime,MimeSlime,StubBird
+Haloslime,MimeSlime,Pixy
+Haloslime,MimeSlime,Any Zombie
+Haloslime,WonderEgg,Any Bird
+Haloslime,Slime,CopyCat
+Healer,Any Slime,CopyCat
+Healer,Any Slime,FunkyBird
+Healer,Any Slime,MadPlant
+Healer,Any Slime,PillowRat
+Kingslime,SpotKing,Gigantes
+Kingslime,SpotKing,ZapBird
+Kingslime,SpotKing,WhiteKing
+Kingslime,SpotKing,WhipBird
+Kingslime,SpotKing,Unicorn
+Kingslime,Slime,Slime
+Kingslime,SpotKing,MadCondor
+Kingslime,SpotKing,KingLeo
+Kingslime,SpotKing,GreatDrak
+Kingslime,SpotKing,Divinegon
+Kingslime,SpotKing,DeadNoble
+Kingslime,SpotKing,Centasaur
+Kingslime,SpotKing,BossTroll
+Kingslime,SpotKing,BattleRex
+Kingslime,Any Slime,Any Boss
+Metabble,Metaly,Metaly
+Metabble,Metaly,WonderEgg
+Metalking,Metabble,Metabble
+Metalking,SpotKing,MetalDrak
+Metalking,WonderEgg,Metabble
+Metalking,KingSlime,MetalDrak
+Metaly,Any Slime,MetalDrak
+Mimeslime,WonderEgg,Any Devil
+Mimeslime,Healer,1EyeClown
+Mimeslime,Healer,EvilWand
+Mimeslime,Healer,TreeBoy
+Pearlgel,Any Slime,Any Water
+Rockslime,Any Slime,BombCrag
+Rockslime,Any Slime,StoneMan
+Rockslime,Any Slime,Golem
+Rockslime,Any Slime,DeadNite
+Slabbit,Any Slime,Skullroo
+Slime,-----,-----
+Slimeborg,Metabble,BattleRex
+Slimeborg,DrakSlime,Swordgon
+Slimeborg,SlimeNite,Spikerous
+Slimeborg,Metabble,SkyDragon
+Slimeborg,Any Slime,Roboster
+Slimeborg,RockSlime,GreatDrak
+Slimenite,Any Slime,Any Devil
+Snaily,Any Slime,Any Bug
+Spotking,MetalKing,BattleRex
+Spotking,MetalKing,ZapBird
+Spotking,MetalKing,WhiteKing
+Spotking,MetalKing,WhipBird
+Spotking,MetalKing,Unicorn
+Spotking,SpotSlime,SpotSlime
+Spotking,MetalKing,MadCondor
+Spotking,MetalKing,KingLeo
+Spotking,KingSlime,GreatDrak
+Spotking,MetalKing,Gigantes
+Spotking,MetalKing,Divinegon
+Spotking,MetalKing,DeadNoble
+Spotking,MetalKing,Centasaur
+Spotking,MetalKing,BossTroll
+Spotslime,Any Slime,Any Beast
+Treeslime,Any Slime,Any Plant
+Tropicgel,TreeSlime,Any Beast
+Tropicgel,WonderEgg,Any Plant
+Tropicgel,Slime,Mommonja
+Tropicgel,Slime,PillowRat
+Wingslime,Any Slime,Any Bird
+Wonderegg,Any Slime,BigRoost (DWM1)
+Anemon,Any Water,Any Plant
+Angleron,Petiteel,Any Material
+Aquadon,Digong,GreatDrak
+Aquadon,Digong,Coatol
+Aquadon,Digong,Orligon
+Aquarella,Any Water,Any Bug
+AxeShark,CancerMan,ArcDemon
+AxeShark,CancerMan,BattleRex
+CancerMan,Clawster,Any Devil
+CancerMan,Clawster,Clawster
+Clawster,Gamanian,Any Devil
+Clawster,Gamanian,ArmyCrab
+Digong,RushFish,Gigantes
+Digong,RushFish,Golem
+Digong,RushFish,MadGoose
+Digong,RushFish,RogueWave
+Digong,RushFish,Spikerous
+FishRider,Angleron,SkulRider
+FishRider,Angleron,Gremlin
+FishRider,Angleron,Pixy
+FishRider,Angleron,Demonite
+Gamanian,Aquarella,Any Bug
+Gamanian,Aquarella,DarkEye
+Gamanian,Aquarella,MedusaEye
+Grakos,Any Water,Any Boss
+HoodSquid,CancerMan,EvilWand
+HoodSquid,CancerMan,WhaleMage
+KingSquid,Octogon,Any Boss
+KingSquid,Octogon,Octogon
+Merman,Any Water,Any Devil
+MerTiger,Merman,GulpBeast
+MerTiger,Merman,MadCat
+Moray,Any Water,Any Dragon
+Octogon,Octoreach,Octoreach
+Octokid,Any Water,Any Material
+Octoraid,Octogon,ChopClown
+Octoraid,Octogon,Lionex
+Octoraid,Octogon,GateGuard
+Octoraid,Octogon,EvilArmor
+Octoreach,Petiteel,Any Beast
+Petiteel,Any Water,Any Slime
+Poseidon,Grakos,Mudou
+Pumpoise,Any Water,BombCrag
+Pumpoise,Any Water,CragDevil
+Pumpoise,Any Water,DuckKite
+Pumpoise,Any Water,MadGoose
+Pumpoise,Any Water,MadPecker
+Pumpoise,Any Water,Mommonja
+Pumpoise,Any Water,SpikyBoy
+PutreFish,Any Water,Any Zombie
+RayGigas,Any Water,Any Bird
+RogueWave,Any Water,JewelBag
+RushFish,Angleron,Any Dragon
+RushFish,Angleron,Droll
+RushFish,Angleron,GulpBeast
+Scallopa,RogueWave,Any Devil
+Scallopa,RogueWave,Mimic
+SeaHorse,Petiteel,Any Devil
+SeaHorse,Petiteel,Any Dragon
+Starfish,HoodSquid,Any Slime
+Starfish,KingSquid,Any Slime
+Starfish,Octogon,Any Slime
+Starfish,OctoReach,Any Slime
+WalrusMan,Any Water,Any Beast
+WhaleMage,HoodSquid,1EyeClown
+WhaleMage,HoodSquid,Reaper
+WhaleMage,HoodSquid,RushFish
+Boneslave,DeadNite,FloraMan
+Boneslave,DeadNite,Gremlin
+Boneslave,DeadNite,HornBeet
+Boneslave,DeadNite,LandOwl
+Boneslave,DeadNite,MadGoose
+Boneslave,Mummy,RockSlime
+Boneslave,DeadNite,SlimeBorg
+Captdead,BoneSlave,Any Water
+Captdead,NiteWhip,Moray
+Copycat,-----,-----
+Darkcrab,Any Zombie,Any Bug
+Darkcrab,Any Zombie,CancerMan
+Darkcrab,Any Zombie,Clawster
+Darkcrab,Any Zombie,Gamanian
+Deadnite,Any Zombie,Any Devil
+Deadnoble,BoneSlave,ArcDemon
+Deadnoble,MadSpirit,ArcDemon
+Deadnoble,CaptDead,CopyCat
+Deadnoble,DeadNite,CopyCat
+Deadnoble,Skullgon,CopyCat
+Deadnoble,DeadNite,DeadNite
+Deadnoble,MadSpirit,GateGuard
+Deadnoble,Skeletor,GateGuard
+Deadnoble,MadSpirit,Lionex
+Deadnoble,Mudron,Lionex
+Deadnoble,CaptDead,MetalDrak
+Deadnoble,MadSpirit,MetalDrak
+Deadnoble,CaptDead,Roboster
+Deadnoble,MadSpirit,Roboster
+Deadnoble,MadSpirit,Roboster2
+Foxfire,NiteWhip,Any Beast
+Foxfire,PutrePup,MistyWing
+Hork,Spooky,Any Beast
+Inverzon,Hork,Hork
+Lazamanus,WhiteKing,DracoLord1
+Madspirit,BoneSlave,Any Bird
+Madspirit,DeadNite,Any Bird
+Madspirit,DeadNoble,Any Bird
+Madspirit,Mudron,Any Bird
+Madspirit,PomPomBom,Any Bird
+Madspirit,Skeletor,Any Bird
+Madspirit,Skullgon,Any Bird
+Madspirit,Any Zombie,Any Dragon
+Mudron,Any Zombie,BoxSlime
+Mudron,Any Zombie,DanceVegi
+Mudron,Any Zombie,Droll
+Mudron,Any Zombie,FangSlime
+Mudron,Any Zombie,FunkyBird
+Mudron,Any Zombie,GiantSlug
+Mudron,Any Zombie,Lipsy
+Mudron,Any Zombie,MadPlant
+Mudron,Any Zombie,Tonguella
+Mudron,Any Zombie,Yeti
+Mummy,Any Zombie,Any Plant
+Niterich,DeadNoble,Octoraid
+Niterich,Skeletor,Roboster2
+Niterich,Skeletor,Serpentia
+Nitewhip,DarkCrab,Any Devil
+Nitewhip,MadSpirit,Any Devil
+Nitewhip,Any Zombie,MistyWing
+Pompombom,FoxFire,Any Beast
+Pompombom,Copycat,Droll
+Pompombom,Copycat,Gasgon
+Putrepup,Any Zombie,Any Beast
+Reaper,Hork,Any Devil
+Reaper,Spooky,Any Devil
+Reaper,Any Zombie,WeedBug
+Rotraven,Any Zombie,Any Bird
+Servant,WhiteKing,Any Devil
+Servant,Skeletor,Skeletor
+Shadow,Any Zombie,Any Material
+Skeletor,MadSpirit,Any Dragon
+Skeletor,BoneSlave,BoneSlave
+Skeletor,CaptDead,EvilBeast
+Skeletor,CaptDead,Golem
+Skeletor,DeadNite,Grizzly
+Skeletor,Mummy,GulpBeast
+Skeletor,Hork,MadCat
+Skeletor,CaptDead,MadCondor
+Skeletor,Mudron,MadRaven
+Skeletor,CaptDead,Ogre
+Skeletor,CaptDead,StoneMan
+Skullgon,BoneSlave,Any Dragon
+Skullgon,DeadNoble,Any Dragon
+Skullgon,Skeletor,Any Dragon
+Skullgon,Skullgon,Any Dragon
+Skullgon,Skulpent,Any Dragon
+Skullgon,WhiteKing,Any Dragon
+Skullgon,Any Zombie,Andreal
+Skullgon,Any Zombie,BattleRex
+Skullgon,Any Zombie,Divinegon
+Skullgon,Any Zombie,GreatDrak
+Skullgon,Any Zombie,Orochi
+Skullgon,Any Zombie,Rayburn
+Skullgon,Any Zombie,Swordgon
+Skulpent,Any Zombie,Any Water
+Spooky,Any Zombie,Any Slime
+Whiteking,Any Zombie,Any Boss
+Whiteking,Niterich,Andreal
+Whiteking,Niterich,Blizzardy
+Whiteking,Skeletor,GoldGolem
+Whiteking,Niterich,Grakos
+Whiteking,Niterich,GreatDrak
+Whiteking,Niterich,KingLeo
+Whiteking,Skullgon,KingSlime
+Whiteking,BoneSlave,MetalKing
+Whiteking,DeadNoble,SpotKing
+Whiteking,Niterich,WhaleMage
+Whiteking,Niterich,WhipBird
+Whiteking,Niterich,ZapBird
+Windmerge,RotRaven,Any Bird
+Windmerge,Any Zombie,WindBeast
