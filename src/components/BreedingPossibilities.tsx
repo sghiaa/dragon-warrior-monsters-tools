@@ -1,7 +1,7 @@
 import React from 'react';
 import { UserMonster } from '../types/monster';
 import { BreedingCalculator } from '../utils/breedingCalculator';
-import { Heart, AlertCircle, CheckCircle } from 'lucide-react';
+import { Heart, AlertCircle, CheckCircle, Sparkles } from 'lucide-react';
 
 interface BreedingPossibilitiesProps {
   userMonsters: UserMonster[];
@@ -14,7 +14,7 @@ export const BreedingPossibilities: React.FC<BreedingPossibilitiesProps> = ({ us
   if (userMonsters.length === 0) {
     return (
       <div className="breeding-possibilities empty">
-        <div className="empty-state">
+        <div className="empty-state possibilities-empty-state">
           <AlertCircle size={48} />
           <h2>No Monsters in Collection</h2>
           <p>Add some monsters to your collection to see breeding possibilities!</p>
@@ -26,7 +26,7 @@ export const BreedingPossibilities: React.FC<BreedingPossibilitiesProps> = ({ us
   if (possibilities.length === 0) {
     return (
       <div className="breeding-possibilities empty">
-        <div className="empty-state">
+        <div className="empty-state possibilities-empty-state">
           <AlertCircle size={48} />
           <h2>No Breeding Possibilities</h2>
           <p>None of your current monsters can breed together. Try adding more monsters to your collection!</p>
@@ -41,9 +41,25 @@ export const BreedingPossibilities: React.FC<BreedingPossibilitiesProps> = ({ us
   return (
     <div className="breeding-possibilities">
       <div className="possibilities-header">
-        <Heart size={24} />
-        <h2>Breeding Possibilities</h2>
-        <p>Here are all the monsters you can breed from your current collection:</p>
+        <div className="possibilities-title">
+          <Heart size={24} />
+          <h2>Breeding Possibilities</h2>
+        </div>
+        <p>All outcomes available from your current stable.</p>
+        <div className="possibility-stats">
+          <div className="possibility-stat">
+            <Sparkles size={16} />
+            <span>{possibilities.length} total</span>
+          </div>
+          <div className="possibility-stat ready">
+            <CheckCircle size={16} />
+            <span>{validPossibilities.length} ready now</span>
+          </div>
+          <div className="possibility-stat blocked">
+            <AlertCircle size={16} />
+            <span>{invalidPossibilities.length} need genders</span>
+          </div>
+        </div>
       </div>
 
       {validPossibilities.length > 0 && (
@@ -55,7 +71,7 @@ export const BreedingPossibilities: React.FC<BreedingPossibilitiesProps> = ({ us
           <div className="possibilities-grid">
             {validPossibilities.map((possibility, index) => (
               <div key={index} className="possibility-card valid">
-                <div className="breeding-combination">
+                <div className="breeding-combination possibility-formula">
                   <div className="parent">
                     <span className="monster-name">{possibility.parent1Name}</span>
                   </div>
@@ -87,7 +103,7 @@ export const BreedingPossibilities: React.FC<BreedingPossibilitiesProps> = ({ us
           <div className="possibilities-grid">
             {invalidPossibilities.map((possibility, index) => (
               <div key={index} className="possibility-card invalid">
-                <div className="breeding-combination">
+                <div className="breeding-combination possibility-formula">
                   <div className="parent">
                     <span className="monster-name">{possibility.parent1Name}</span>
                   </div>
@@ -112,8 +128,7 @@ export const BreedingPossibilities: React.FC<BreedingPossibilitiesProps> = ({ us
 
       <div className="possibilities-summary">
         <p>
-          <strong>Total possibilities:</strong> {possibilities.length} 
-          ({validPossibilities.length} ready to breed, {invalidPossibilities.length} need proper genders)
+          <strong>Summary:</strong> {validPossibilities.length} can be bred immediately, and {invalidPossibilities.length} are one gender assignment away.
         </p>
       </div>
     </div>
