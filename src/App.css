@@ -668,14 +668,28 @@ body {
   font-size: 0.75rem;
 }
 
-.tree-node.checked-male {
-  background: #dff0ff;
-  border-color: #7ab7ff;
+.tree-node.state-baseline {
+  background: #eceff3;
+  border-color: #b8c0cc;
+  color: #556173;
 }
 
-.tree-node.checked-female {
+.tree-node.state-male {
+  background: #dff0ff;
+  border-color: #7ab7ff;
+  color: #154f8f;
+}
+
+.tree-node.state-female {
   background: #ffe3f1;
   border-color: #f3a5cf;
+  color: #8f235f;
+}
+
+.tree-node.state-paired {
+  background: #dff6e4;
+  border-color: #7cc793;
+  color: #1f6a33;
 }
 
 .unlimited-breeding {

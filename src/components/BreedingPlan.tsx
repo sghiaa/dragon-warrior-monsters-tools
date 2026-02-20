@@ -207,11 +207,21 @@ export const BreedingPlan: React.FC<BreedingPlanProps> = ({ plan, goalStateKey }
     const isChecked = checkedNodes.has(path);
     const selectedGender = checkedNodeGenders[path];
     const customName = checkedNodeNames[path];
-    const genderClass = selectedGender ? `checked-${selectedGender}` : '';
+    const siblingPath = path.endsWith('.L')
+      ? `${path.slice(0, -2)}.R`
+      : path.endsWith('.R')
+        ? `${path.slice(0, -2)}.L`
+        : null;
+    const isSiblingChecked = siblingPath ? checkedNodes.has(siblingPath) : false;
+    const stateClass = (isChecked && isSiblingChecked)
+      ? 'state-paired'
+      : selectedGender
+        ? `state-${selectedGender}`
+        : 'state-baseline';
 
     return (
       <li className="tree-item">
-        <div className={`${nodeClass} ${isChecked ? 'checked' : ''} ${genderClass}`}>
+        <div className={`${nodeClass} ${isChecked ? 'checked' : ''} ${stateClass}`}>
           <div className="tree-check">
             <input
               type="checkbox"
