@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Gender, OwnedMonster } from '../types/monster';
-import { MONSTERS, FAMILIES, getMonsterById } from '../data/monsters';
+import { MONSTERS, getMonsterById } from '../data/monsters';
 import { Plus, Trash2 } from 'lucide-react';
 
 interface MonsterListProps {
@@ -14,19 +14,33 @@ export const MonsterList: React.FC<MonsterListProps> = ({
   onOwnedMonsterAdd,
   onOwnedMonsterRemove
 }) => {
-  const [selectedFamily, setSelectedFamily] = useState<string>('All');
-  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [speciesQuery, setSpeciesQuery] = useState<string>('');
   const [selectedSpecies, setSelectedSpecies] = useState<string>('');
+  const [isSpeciesMenuOpen, setIsSpeciesMenuOpen] = useState<boolean>(false);
   const [selectedGender, setSelectedGender] = useState<Gender>('male');
   const [nickname, setNickname] = useState<string>('');
 
   const filteredMonsters = useMemo(() => {
+    const normalized = speciesQuery.trim().toLowerCase();
     return MONSTERS.filter((monster) => {
-      const matchesFamily = selectedFamily === 'All' || monster.family === selectedFamily;
-      const matchesSearch = monster.name.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesFamily && matchesSearch;
-    }).sort((a, b) => a.name.localeCompare(b.name));
-  }, [selectedFamily, searchTerm]);
+      if (!normalized) {
+        return true;
+      }
+      return monster.name.toLowerCase().includes(normalized);
+    })
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .slice(0, 50);
+  }, [speciesQuery]);
+
+  const handleSpeciesSelect = (monsterId: string) => {
+    const selectedMonster = getMonsterById(monsterId);
+    if (!selectedMonster) {
+      return;
+    }
+    setSelectedSpecies(monsterId);
+    setSpeciesQuery(selectedMonster.name);
+    setIsSpeciesMenuOpen(false);
+  };
 
   const handleAdd = () => {
     if (!selectedSpecies) {
@@ -35,6 +49,9 @@ export const MonsterList: React.FC<MonsterListProps> = ({
 
     onOwnedMonsterAdd(selectedSpecies, selectedGender, nickname);
     setNickname('');
+    setSpeciesQuery('');
+    setSelectedSpecies('');
+    setIsSpeciesMenuOpen(false);
   };
 
   return (
@@ -76,37 +93,43 @@ export const MonsterList: React.FC<MonsterListProps> = ({
 
       <div className="stable-add-panel">
         <h3>Add Monster to Stable</h3>
-        <div className="filters">
-          <input
-            type="text"
-            placeholder="Search species..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
-          />
-          <select
-            value={selectedFamily}
-            onChange={(e) => setSelectedFamily(e.target.value)}
-            className="family-filter"
-          >
-            <option value="All">All Families</option>
-            {FAMILIES.map((family) => (
-              <option key={family} value={family}>{family}</option>
-            ))}
-          </select>
-        </div>
-
         <div className="add-form-grid">
-          <select
-            value={selectedSpecies}
-            onChange={(e) => setSelectedSpecies(e.target.value)}
-            className="family-filter"
-          >
-            <option value="">Select species</option>
-            {filteredMonsters.map((monster) => (
-              <option key={monster.id} value={monster.id}>{monster.name} ({monster.family})</option>
-            ))}
-          </select>
+          <div className="stable-combobox">
+            <input
+              type="text"
+              placeholder="Choose species..."
+              value={speciesQuery}
+              onChange={(e) => {
+                const nextValue = e.target.value;
+                setSpeciesQuery(nextValue);
+                setIsSpeciesMenuOpen(true);
+
+                const exact = MONSTERS.find((monster) => monster.name.toLowerCase() === nextValue.trim().toLowerCase());
+                setSelectedSpecies(exact ? exact.id : '');
+              }}
+              onFocus={() => setIsSpeciesMenuOpen(true)}
+              onBlur={() => {
+                setTimeout(() => setIsSpeciesMenuOpen(false), 120);
+              }}
+              className="search-input"
+            />
+            {isSpeciesMenuOpen && filteredMonsters.length > 0 && (
+              <div className="combobox-menu">
+                {filteredMonsters.map((monster) => (
+                  <button
+                    type="button"
+                    key={monster.id}
+                    className={`combobox-option ${selectedSpecies === monster.id ? 'active' : ''}`}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => handleSpeciesSelect(monster.id)}
+                  >
+                    <span>{monster.name}</span>
+                    <span className="combobox-meta">{monster.family}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           <select
             value={selectedGender}

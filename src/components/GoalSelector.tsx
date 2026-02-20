@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { MONSTERS, FAMILIES } from '../data/monsters';
-import { Target, Search } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { MONSTERS } from '../data/monsters';
+import { Target } from 'lucide-react';
 
 interface GoalSelectorProps {
   onGoalChange: (monsterIds: string[]) => void;
@@ -9,39 +9,47 @@ interface GoalSelectorProps {
 }
 
 export const GoalSelector: React.FC<GoalSelectorProps> = ({ onGoalChange, selectedGoals, goalStepCounts }) => {
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const [selectedFamily, setSelectedFamily] = useState<string>('All');
+  const [query, setQuery] = useState<string>('');
+  const [menuOpen, setMenuOpen] = useState<boolean>(false);
 
-  const filteredMonsters = MONSTERS
-    .filter(monster => {
-      const matchesFamily = selectedFamily === 'All' || monster.family === selectedFamily;
-      const matchesSearch = monster.name.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesFamily && matchesSearch;
-    })
-    .sort((a, b) => {
-      const aSteps = goalStepCounts[a.id] ?? -1;
-      const bSteps = goalStepCounts[b.id] ?? -1;
-      const aSortable = aSteps < 0 ? Number.NEGATIVE_INFINITY : aSteps;
-      const bSortable = bSteps < 0 ? Number.NEGATIVE_INFINITY : bSteps;
+  const filteredMonsters = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    return MONSTERS
+      .filter((monster) => {
+        const matchesSearch = !normalizedQuery || monster.name.toLowerCase().includes(normalizedQuery);
+        return matchesSearch && !selectedGoals.includes(monster.id);
+      })
+      .sort((a, b) => {
+        const aSteps = goalStepCounts[a.id] ?? -1;
+        const bSteps = goalStepCounts[b.id] ?? -1;
+        const aSortable = aSteps < 0 ? Number.NEGATIVE_INFINITY : aSteps;
+        const bSortable = bSteps < 0 ? Number.NEGATIVE_INFINITY : bSteps;
 
-      if (aSortable !== bSortable) {
-        return bSortable - aSortable;
-      }
+        if (aSortable !== bSortable) {
+          return bSortable - aSortable;
+        }
 
-      return a.name.localeCompare(b.name);
-    });
+        return a.name.localeCompare(b.name);
+      })
+      .slice(0, 50);
+  }, [query, goalStepCounts, selectedGoals]);
 
   const getMonsterName = (monsterId: string): string => {
     const monster = MONSTERS.find(m => m.id === monsterId);
     return monster ? monster.name : monsterId;
   };
 
-  const toggleGoal = (monsterId: string) => {
+  const addGoal = (monsterId: string) => {
     if (selectedGoals.includes(monsterId)) {
-      onGoalChange(selectedGoals.filter((id) => id !== monsterId));
       return;
     }
     onGoalChange([...selectedGoals, monsterId]);
+    setQuery('');
+    setMenuOpen(false);
+  };
+
+  const removeGoal = (monsterId: string) => {
+    onGoalChange(selectedGoals.filter((id) => id !== monsterId));
   };
 
   return (
@@ -56,7 +64,14 @@ export const GoalSelector: React.FC<GoalSelectorProps> = ({ onGoalChange, select
           <span className="goal-label">Current Goals:</span>
           <div className="goal-list">
             {selectedGoals.map((goalId) => (
-              <span key={goalId} className="goal-name">{getMonsterName(goalId)}</span>
+              <button
+                key={goalId}
+                className="goal-name removable"
+                onClick={() => removeGoal(goalId)}
+                title="Remove goal"
+              >
+                {getMonsterName(goalId)} ×
+              </button>
             ))}
           </div>
           <button 
@@ -68,54 +83,39 @@ export const GoalSelector: React.FC<GoalSelectorProps> = ({ onGoalChange, select
         </div>
       )}
 
-      <div className="filters">
-        <div className="search-box">
-          <Search size={16} />
+      <div className="goal-combobox-wrapper">
+        <div className="stable-combobox">
           <input
             type="text"
-            placeholder="Search for a monster..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
             className="search-input"
+            placeholder="Search goals by monster name..."
+            value={query}
+            onFocus={() => setMenuOpen(true)}
+            onBlur={() => setTimeout(() => setMenuOpen(false), 120)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setMenuOpen(true);
+            }}
           />
-        </div>
-        
-        <select
-          value={selectedFamily}
-          onChange={(e) => setSelectedFamily(e.target.value)}
-          className="family-filter"
-        >
-          <option value="All">All Families</option>
-          {FAMILIES.map(family => (
-            <option key={family} value={family}>{family}</option>
-          ))}
-        </select>
-      </div>
-
-      <div className="monster-selection-grid">
-        {filteredMonsters.map(monster => (
-          <button
-            key={monster.id}
-            className={`monster-option ${selectedGoals.includes(monster.id) ? 'selected' : ''}`}
-            onClick={() => toggleGoal(monster.id)}
-          >
-            <div className="monster-option-content">
-              <h3>{monster.name}</h3>
-              <div className="monster-meta">
-                <span className="family">{monster.family}</span>
-                <span className="rank">Rank {monster.rank}</span>
-                <span className="step-count">
-                  {goalStepCounts[monster.id] >= 0 ? `${goalStepCounts[monster.id]} steps` : 'No route'}
-                </span>
-              </div>
-              <div className="monster-stats">
-                <span>HP: {monster.hpGrowth}</span>
-                <span>ATK: {monster.attackGrowth}</span>
-                <span>DEF: {monster.defenseGrowth}</span>
-              </div>
+          {menuOpen && filteredMonsters.length > 0 && (
+            <div className="combobox-menu">
+              {filteredMonsters.map((monster) => (
+                <button
+                  type="button"
+                  key={monster.id}
+                  className="combobox-option"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => addGoal(monster.id)}
+                >
+                  <span>{monster.name}</span>
+                  <span className="combobox-meta">
+                    {goalStepCounts[monster.id] >= 0 ? `${goalStepCounts[monster.id]} steps` : 'No route'}
+                  </span>
+                </button>
+              ))}
             </div>
-          </button>
-        ))}
+          )}
+        </div>
       </div>
     </div>
   );
