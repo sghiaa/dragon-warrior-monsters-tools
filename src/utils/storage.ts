@@ -1,9 +1,10 @@
-import { Gender, UserMonster } from '../types/monster';
+import { Gender, OwnedMonster, UserMonster } from '../types/monster';
 
 const STORAGE_KEY = 'dwm2-breeding-planner-data';
 
 export interface StorageData {
   userMonsters: UserMonster[];
+  ownedMonsters: OwnedMonster[];
   plannerProgressByGoal: Record<string, PlannerProgressState>;
   uiState?: UiState;
   lastUpdated: string;
@@ -33,6 +34,7 @@ const loadStorageData = (): StorageData | null => {
     const data = JSON.parse(stored);
     return {
       userMonsters: data.userMonsters || [],
+      ownedMonsters: data.ownedMonsters || [],
       plannerProgressByGoal: data.plannerProgressByGoal || {},
       uiState: data.uiState || {},
       lastUpdated: data.lastUpdated || new Date().toISOString()
@@ -51,16 +53,18 @@ export const loadFromStorage = (): StorageData => {
   
   return {
     userMonsters: [],
+    ownedMonsters: [],
     plannerProgressByGoal: {},
     lastUpdated: new Date().toISOString()
   };
 };
 
-export const saveToStorage = (userMonsters: UserMonster[]): void => {
+export const saveToStorage = (userMonsters: UserMonster[], ownedMonsters: OwnedMonster[]): void => {
   try {
     const existing = loadStorageData();
     const data: StorageData = {
       userMonsters,
+      ownedMonsters,
       plannerProgressByGoal: existing?.plannerProgressByGoal || {},
       uiState: existing?.uiState || {},
       lastUpdated: new Date().toISOString()

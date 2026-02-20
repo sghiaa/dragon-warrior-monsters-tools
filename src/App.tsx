@@ -5,19 +5,21 @@ import { GoalSelector } from './components/GoalSelector';
 import { BreedingPlan } from './components/BreedingPlan';
 import { UnlimitedBreeding } from './components/UnlimitedBreeding';
 import { loadFromStorage, loadUiState, saveToStorage, saveUiState } from './utils/storage';
-import { BreedingPlan as BreedingPlanType, UserMonster } from './types/monster';
+import { BreedingPlan as BreedingPlanType, OwnedMonster } from './types/monster';
 import { initializeData, MONSTERS } from './data/monsters';
 import { BreedingPathfinder } from './utils/breedingPathfinder';
+import { computeAutoAssignments, deriveUserMonstersFromOwned } from './utils/plannerAllocation';
 import './App.css';
 
 function App() {
-  const [userMonsters, setUserMonsters] = useState<UserMonster[]>([]);
+  const [ownedMonsters, setOwnedMonsters] = useState<OwnedMonster[]>([]);
   const [activeTab, setActiveTab] = useState<'collection' | 'possibilities' | 'planner' | 'unlimited'>('collection');
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const [breedingPlans, setBreedingPlans] = useState<Record<string, BreedingPlanType>>({});
   const [plannerSeedMonsterIds, setPlannerSeedMonsterIds] = useState<string[] | null>(null);
   const [dataLoaded, setDataLoaded] = useState(false);
   const plannerSeedKey = (plannerSeedMonsterIds || []).slice().sort().join(',');
+  const userMonsters = useMemo(() => deriveUserMonstersFromOwned(ownedMonsters), [ownedMonsters]);
   const goalStepCounts = useMemo(() => {
     if (!dataLoaded) {
       return {};
@@ -35,6 +37,9 @@ function App() {
 
     return counts;
   }, [dataLoaded, userMonsters, plannerSeedMonsterIds]);
+  const autoAssignmentsByGoal = useMemo(() => {
+    return computeAutoAssignments(selectedGoals, breedingPlans, ownedMonsters);
+  }, [selectedGoals, breedingPlans, ownedMonsters]);
 
   // Initialize data on mount
   useEffect(() => {
@@ -45,7 +50,31 @@ function App() {
 
   useEffect(() => {
     const storedData = loadFromStorage();
-    setUserMonsters(storedData.userMonsters);
+    if (storedData.ownedMonsters.length > 0) {
+      setOwnedMonsters(storedData.ownedMonsters);
+    } else {
+      // Backward compatibility: synthesize stable entries from old aggregated collection.
+      const migratedOwned: OwnedMonster[] = [];
+      storedData.userMonsters.forEach((um) => {
+        for (let i = 0; i < um.maleCount; i++) {
+          migratedOwned.push({
+            id: `${um.monsterId}-m-${i}-${Date.now()}`,
+            monsterId: um.monsterId,
+            gender: 'male',
+            nickname: ''
+          });
+        }
+        for (let i = 0; i < um.femaleCount; i++) {
+          migratedOwned.push({
+            id: `${um.monsterId}-f-${i}-${Date.now()}`,
+            monsterId: um.monsterId,
+            gender: 'female',
+            nickname: ''
+          });
+        }
+      });
+      setOwnedMonsters(migratedOwned);
+    }
     const uiState = loadUiState();
     if (uiState.activeTab) {
       setActiveTab(uiState.activeTab);
@@ -61,8 +90,8 @@ function App() {
   }, []);
 
   useEffect(() => {
-    saveToStorage(userMonsters);
-  }, [userMonsters]);
+    saveToStorage(userMonsters, ownedMonsters);
+  }, [userMonsters, ownedMonsters]);
 
   useEffect(() => {
     saveUiState({
@@ -88,29 +117,20 @@ function App() {
     setBreedingPlans(nextPlans);
   }, [selectedGoals, userMonsters, plannerSeedMonsterIds]);
 
-  const handleMonsterUpdate = (monsterId: string, count: number, maleCount: number, femaleCount: number) => {
-    setUserMonsters(prevMonsters => {
-      const existingIndex = prevMonsters.findIndex(um => um.monsterId === monsterId);
-      
-      if (count === 0) {
-        return prevMonsters.filter(um => um.monsterId !== monsterId);
-      }
-      
-      const updatedMonster: UserMonster = {
+  const handleOwnedMonsterAdd = (monsterId: string, gender: 'male' | 'female', nickname: string) => {
+    setOwnedMonsters((prev) => [
+      ...prev,
+      {
+        id: `${monsterId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         monsterId,
-        count,
-        maleCount,
-        femaleCount
-      };
-      
-      if (existingIndex >= 0) {
-        const newMonsters = [...prevMonsters];
-        newMonsters[existingIndex] = updatedMonster;
-        return newMonsters;
-      } else {
-        return [...prevMonsters, updatedMonster];
+        gender,
+        nickname: nickname.trim()
       }
-    });
+    ]);
+  };
+
+  const handleOwnedMonsterRemove = (ownedMonsterId: string) => {
+    setOwnedMonsters((prev) => prev.filter((owned) => owned.id !== ownedMonsterId));
   };
 
   const handleGoalChange = (monsterIds: string[]) => {
@@ -175,8 +195,9 @@ function App() {
           <main className="app-main">
             {activeTab === 'collection' && (
               <MonsterList
-                userMonsters={userMonsters}
-                onMonsterUpdate={handleMonsterUpdate}
+                ownedMonsters={ownedMonsters}
+                onOwnedMonsterAdd={handleOwnedMonsterAdd}
+                onOwnedMonsterRemove={handleOwnedMonsterRemove}
               />
             )}
 
@@ -214,6 +235,7 @@ function App() {
                         key={plannerGoalStateKey}
                         plan={plan}
                         goalStateKey={plannerGoalStateKey}
+                        autoAssignment={autoAssignmentsByGoal[goalId]}
                       />
                     );
                   })}

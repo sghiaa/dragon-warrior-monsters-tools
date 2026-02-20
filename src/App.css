@@ -92,6 +92,61 @@ body {
   width: 100%;
 }
 
+.stable-panel,
+.stable-add-panel {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  margin-bottom: 1rem;
+}
+
+.stable-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0.75rem;
+}
+
+.stable-gender-pill {
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: #ffffff;
+  border: 1px solid #c8d4e9;
+  border-radius: 999px;
+  padding: 0.15rem 0.5rem;
+}
+
+.stable-remove {
+  border: none;
+  background: transparent;
+  color: #6a7895;
+  cursor: pointer;
+}
+
+.add-form-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 2fr auto;
+  gap: 0.75rem;
+}
+
+.add-stable-btn {
+  border: none;
+  background: #667eea;
+  color: #fff;
+  border-radius: 8px;
+  padding: 0.6rem 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.add-stable-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .filters {
   display: flex;
   gap: 1rem;
@@ -887,6 +942,10 @@ body {
   }
 
   .unlimited-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .add-form-grid {
     grid-template-columns: 1fr;
   }
 }

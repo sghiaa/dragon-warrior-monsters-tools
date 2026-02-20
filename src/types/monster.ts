@@ -31,6 +31,13 @@ export interface UserMonster {
   femaleCount: number;
 }
 
+export interface OwnedMonster {
+  id: string;
+  monsterId: string;
+  gender: Gender;
+  nickname: string;
+}
+
 export interface BreedingPlan {
   targetMonster: string;
   steps: BreedingStep[];

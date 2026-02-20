@@ -7,9 +7,14 @@ import { CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 interface BreedingPlanProps {
   plan: BreedingPlanType;
   goalStateKey: string;
+  autoAssignment?: {
+    checkedNodes: string[];
+    checkedNodeGenders: Record<string, Gender>;
+    checkedNodeNames: Record<string, string>;
+  };
 }
 
-export const BreedingPlan: React.FC<BreedingPlanProps> = ({ plan, goalStateKey }) => {
+export const BreedingPlan: React.FC<BreedingPlanProps> = ({ plan, goalStateKey, autoAssignment }) => {
   const [checkedNodes, setCheckedNodes] = useState<Set<string>>(new Set());
   const [checkedNodeGenders, setCheckedNodeGenders] = useState<Record<string, Gender>>({});
   const [checkedNodeNames, setCheckedNodeNames] = useState<Record<string, string>>({});
@@ -83,18 +88,23 @@ export const BreedingPlan: React.FC<BreedingPlanProps> = ({ plan, goalStateKey }
   }, [adjustedRemaining]);
 
   useEffect(() => {
+    const prefill = autoAssignment || {
+      checkedNodes: [] as string[],
+      checkedNodeGenders: {} as Record<string, Gender>,
+      checkedNodeNames: {} as Record<string, string>
+    };
     const saved = loadPlannerProgress(goalStateKey);
     if (!saved) {
-      setCheckedNodes(new Set());
-      setCheckedNodeGenders({});
-      setCheckedNodeNames({});
+      setCheckedNodes(new Set(prefill.checkedNodes));
+      setCheckedNodeGenders(prefill.checkedNodeGenders);
+      setCheckedNodeNames(prefill.checkedNodeNames);
       return;
     }
 
-    setCheckedNodes(new Set(saved.checkedNodes || []));
-    setCheckedNodeGenders(saved.checkedNodeGenders || {});
-    setCheckedNodeNames(saved.checkedNodeNames || {});
-  }, [goalStateKey]);
+    setCheckedNodes(new Set([...(saved.checkedNodes || []), ...prefill.checkedNodes]));
+    setCheckedNodeGenders({ ...prefill.checkedNodeGenders, ...(saved.checkedNodeGenders || {}) });
+    setCheckedNodeNames({ ...prefill.checkedNodeNames, ...(saved.checkedNodeNames || {}) });
+  }, [goalStateKey, autoAssignment]);
 
   useEffect(() => {
     if (!goalStateKey) {
