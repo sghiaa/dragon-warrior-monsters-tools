@@ -101,8 +101,18 @@ export const BreedingPlan: React.FC<BreedingPlanProps> = ({ plan, goalStateKey, 
       return;
     }
 
-    setCheckedNodes(new Set([...(saved.checkedNodes || []), ...prefill.checkedNodes]));
-    setCheckedNodeGenders({ ...prefill.checkedNodeGenders, ...(saved.checkedNodeGenders || {}) });
+    const mergedCheckedNodes = new Set([...(saved.checkedNodes || []), ...prefill.checkedNodes]);
+    const prefillCheckedSet = new Set(prefill.checkedNodes);
+    const mergedGenders: Record<string, Gender> = { ...(saved.checkedNodeGenders || {}) };
+    Object.entries(prefill.checkedNodeGenders).forEach(([path, gender]) => {
+      // Stable-derived checked assignments should always win over stale saved state.
+      if (prefillCheckedSet.has(path) || !mergedGenders[path]) {
+        mergedGenders[path] = gender;
+      }
+    });
+
+    setCheckedNodes(mergedCheckedNodes);
+    setCheckedNodeGenders(mergedGenders);
     setCheckedNodeNames({ ...prefill.checkedNodeNames, ...(saved.checkedNodeNames || {}) });
   }, [goalStateKey, autoAssignment]);
 
@@ -197,11 +207,20 @@ export const BreedingPlan: React.FC<BreedingPlanProps> = ({ plan, goalStateKey, 
         : null;
     const oppositeGender: Gender = gender === 'male' ? 'female' : 'male';
 
-    setCheckedNodeGenders((prev) => ({
-      ...prev,
-      [path]: gender,
-      ...(siblingPath ? { [siblingPath]: oppositeGender } : {})
-    }));
+    setCheckedNodeGenders((prev) => {
+      const next: Record<string, Gender> = {
+        ...prev,
+        [path]: gender
+      };
+
+      // Keep pair hinting for an unchecked sibling, but never override a checked node
+      // that may have been prefilled from the stable with a real gender.
+      if (siblingPath && !checkedNodes.has(siblingPath)) {
+        next[siblingPath] = oppositeGender;
+      }
+
+      return next;
+    });
   };
 
   const setCheckedNodeName = (path: string, name: string) => {
