@@ -1067,6 +1067,7 @@ body {
 
 .possibility-formula .parent,
 .possibility-formula .result {
+  min-width: 0;
   background: #fff;
   border: 1px solid #d8dfeb;
   border-radius: 8px;
@@ -1086,6 +1087,12 @@ body {
 
 .result-name {
   color: #183e70;
+}
+
+.possibility-formula .monster-name {
+  display: block;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .possibility-status {
