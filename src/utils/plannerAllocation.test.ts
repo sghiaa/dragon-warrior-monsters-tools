@@ -6,7 +6,11 @@ jest.mock('../data/monsters', () => ({
     const familyMap: Record<string, string> = {
       pizzaro: 'Boss',
       kingleo: 'Beast',
-      saberman: 'Beast'
+      saberman: 'Beast',
+      devila: 'Devil',
+      goldslime: 'Slime',
+      bar: 'Beast',
+      foo: 'Beast'
     };
 
     if (!familyMap[id]) {
@@ -93,5 +97,131 @@ describe('computeAutoAssignments', () => {
     expect(assignments.goal_top.checkedNodes).toContain('root.L');
     expect(assignments.goal_top.checkedNodeNames['root.L']).toBe('Pizza');
     expect(assignments.goal_bottom.checkedNodes).not.toContain('root.L');
+  });
+
+  it('prioritizes family slot whose sibling is already assigned', () => {
+    const selectedGoals = ['goal_landowl'];
+    const breedingPlans: Record<string, BreedingPlan> = {
+      goal_landowl: {
+        targetMonster: 'goal_landowl',
+        steps: [],
+        isPossible: true,
+        missingMonsters: [],
+        tree: {
+          kind: 'monster',
+          value: 'landowl',
+          left: { kind: 'monster', value: 'bullbird' },
+          right: { kind: 'family', value: 'Any Devil' }
+        }
+      }
+    };
+
+    const owned: OwnedMonster[] = [
+      { id: 'owned-bullbird', monsterId: 'bullbird', gender: 'male', nickname: 'Bull' },
+      { id: 'owned-devil', monsterId: 'devila', gender: 'female', nickname: 'Dev' }
+    ];
+
+    const assignments = computeAutoAssignments(selectedGoals, breedingPlans, owned);
+
+    expect(assignments.goal_landowl.checkedNodes).toContain('root.L');
+    expect(assignments.goal_landowl.checkedNodes).toContain('root.R');
+    expect(assignments.goal_landowl.checkedNodeNames['root.R']).toBe('Dev');
+  });
+
+  it('infers opposite gender on unfilled sibling when autofilling one side', () => {
+    const selectedGoals = ['goal_landowl'];
+    const breedingPlans: Record<string, BreedingPlan> = {
+      goal_landowl: {
+        targetMonster: 'goal_landowl',
+        steps: [],
+        isPossible: true,
+        missingMonsters: [],
+        tree: {
+          kind: 'monster',
+          value: 'landowl',
+          left: { kind: 'monster', value: 'bullbird' },
+          right: { kind: 'family', value: 'Any Devil' }
+        }
+      }
+    };
+
+    const owned: OwnedMonster[] = [
+      { id: 'owned-bullbird', monsterId: 'bullbird', gender: 'male', nickname: 'Bull' }
+    ];
+
+    const assignments = computeAutoAssignments(selectedGoals, breedingPlans, owned);
+
+    expect(assignments.goal_landowl.checkedNodes).toContain('root.L');
+    expect(assignments.goal_landowl.checkedNodes).not.toContain('root.R');
+    expect(assignments.goal_landowl.checkedNodeGenders['root.R']).toBe('female');
+  });
+
+  it('preserves owned genders for checked sibling pair', () => {
+    const selectedGoals = ['goal_landowl'];
+    const breedingPlans: Record<string, BreedingPlan> = {
+      goal_landowl: {
+        targetMonster: 'goal_landowl',
+        steps: [],
+        isPossible: true,
+        missingMonsters: [],
+        tree: {
+          kind: 'monster',
+          value: 'landowl',
+          left: { kind: 'monster', value: 'bullbird' },
+          right: { kind: 'monster', value: 'saberman' }
+        }
+      }
+    };
+
+    const owned: OwnedMonster[] = [
+      { id: 'owned-bullbird', monsterId: 'bullbird', gender: 'male', nickname: 'B1' },
+      { id: 'owned-saberman', monsterId: 'saberman', gender: 'male', nickname: 'S1' }
+    ];
+
+    const assignments = computeAutoAssignments(selectedGoals, breedingPlans, owned);
+
+    expect(assignments.goal_landowl.checkedNodes).toContain('root.L');
+    expect(assignments.goal_landowl.checkedNodes).toContain('root.R');
+    expect(assignments.goal_landowl.checkedNodeGenders['root.L']).toBe('male');
+    expect(assignments.goal_landowl.checkedNodeGenders['root.R']).toBe('male');
+  });
+
+  it('prioritizes exact-match placement in the branch that is closer to completion', () => {
+    const selectedGoals = ['goal_darkdrium_like'];
+    const breedingPlans: Record<string, BreedingPlan> = {
+      goal_darkdrium_like: {
+        targetMonster: 'goal_darkdrium_like',
+        steps: [],
+        isPossible: true,
+        missingMonsters: [],
+        tree: {
+          kind: 'monster',
+          value: 'goal_darkdrium_like',
+          left: {
+            kind: 'monster',
+            value: 'branch_left',
+            left: { kind: 'monster', value: 'foo' },
+            right: { kind: 'monster', value: 'goldslime' }
+          },
+          right: {
+            kind: 'monster',
+            value: 'branch_right',
+            left: { kind: 'monster', value: 'bar' },
+            right: { kind: 'monster', value: 'goldslime' }
+          }
+        }
+      }
+    };
+
+    const owned: OwnedMonster[] = [
+      { id: 'owned-bar', monsterId: 'bar', gender: 'male', nickname: 'Bar' },
+      { id: 'owned-gold', monsterId: 'goldslime', gender: 'female', nickname: 'Gold' }
+    ];
+
+    const assignments = computeAutoAssignments(selectedGoals, breedingPlans, owned);
+
+    expect(assignments.goal_darkdrium_like.checkedNodes).toContain('root.R.L');
+    expect(assignments.goal_darkdrium_like.checkedNodes).toContain('root.R.R');
+    expect(assignments.goal_darkdrium_like.checkedNodes).not.toContain('root.L.R');
   });
 });

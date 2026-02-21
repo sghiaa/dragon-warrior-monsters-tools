@@ -100,6 +100,16 @@ const isBlocked = (path: string, takenPaths: Set<string>) => {
   return false;
 };
 
+const getSiblingPath = (path: string): string | null => {
+  if (path.endsWith('.L')) {
+    return `${path.slice(0, -2)}.R`;
+  }
+  if (path.endsWith('.R')) {
+    return `${path.slice(0, -2)}.L`;
+  }
+  return null;
+};
+
 export const computeAutoAssignments = (
   selectedGoals: string[],
   breedingPlans: Record<string, BreedingPlan>,
@@ -142,6 +152,18 @@ export const computeAutoAssignments = (
     if (owned.nickname.trim()) {
       result[goalId].checkedNodeNames[path] = owned.nickname.trim();
     }
+
+    // If only one side of a pair is filled, infer the opposite gender on the sibling
+    // so the planner UI can still show the intended pair direction.
+    const siblingPath = getSiblingPath(path);
+    if (
+      siblingPath &&
+      !result[goalId].checkedNodes.includes(siblingPath) &&
+      !result[goalId].checkedNodeGenders[siblingPath]
+    ) {
+      result[goalId].checkedNodeGenders[siblingPath] = owned.gender === 'male' ? 'female' : 'male';
+    }
+
     ensureGoalSet(goalId).add(path);
   };
 
@@ -150,16 +172,43 @@ export const computeAutoAssignments = (
     return !set.has(path) && !isBlocked(path, set);
   };
 
-  const ownedPool = [...ownedMonsters];
-  for (const owned of ownedPool) {
+  // Pass 1: assign all exact species matches first.
+  const remainingOwned: OwnedMonster[] = [];
+  for (const owned of ownedMonsters) {
     const exactCandidates = monsterSlots
       .filter((slot) => slot.speciesId === owned.monsterId && isSlotAvailable(slot.goalId, slot.path))
+      .map((slot) => {
+        const siblingPath = getSiblingPath(slot.path);
+        const siblingAssignedGender = siblingPath
+          ? result[slot.goalId].checkedNodeGenders[siblingPath]
+          : undefined;
+        const siblingIsChecked = siblingPath
+          ? result[slot.goalId].checkedNodes.includes(siblingPath)
+          : false;
+        const immediateBreed = siblingAssignedGender
+          ? siblingAssignedGender !== owned.gender
+            ? 2
+            : 0
+          : 1;
+        return { ...slot, siblingIsChecked, immediateBreed };
+      })
       .sort((a, b) => {
-        if (a.subtreeSize !== b.subtreeSize) {
-          return b.subtreeSize - a.subtreeSize;
+        // Prefer branch completion over broad coverage:
+        // 1) sibling already checked
+        // 2) immediate opposite-gender pairing
+        // 3) deeper nodes
+        // 4) smaller subtree
+        if (a.siblingIsChecked !== b.siblingIsChecked) {
+          return a.siblingIsChecked ? -1 : 1;
+        }
+        if (a.immediateBreed !== b.immediateBreed) {
+          return b.immediateBreed - a.immediateBreed;
         }
         if (a.depth !== b.depth) {
-          return a.depth - b.depth;
+          return b.depth - a.depth;
+        }
+        if (a.subtreeSize !== b.subtreeSize) {
+          return a.subtreeSize - b.subtreeSize;
         }
         return (goalOrder.get(a.goalId) || 0) - (goalOrder.get(b.goalId) || 0);
       });
@@ -169,7 +218,11 @@ export const computeAutoAssignments = (
       assign(picked.goalId, picked.path, owned);
       continue;
     }
+    remainingOwned.push(owned);
+  }
 
+  // Pass 2: greedily place remaining monsters into family slots.
+  for (const owned of remainingOwned) {
     const monster = getMonsterById(owned.monsterId);
     const family = monster?.family;
     if (!family) {
@@ -182,14 +235,20 @@ export const computeAutoAssignments = (
         const siblingAssignedGender = slot.siblingPath
           ? result[slot.goalId].checkedNodeGenders[slot.siblingPath]
           : undefined;
+        const siblingIsChecked = slot.siblingPath
+          ? result[slot.goalId].checkedNodes.includes(slot.siblingPath)
+          : false;
         const immediateBreed = siblingAssignedGender
           ? siblingAssignedGender !== owned.gender
             ? 2
             : 0
           : 1;
-        return { ...slot, immediateBreed };
+        return { ...slot, immediateBreed, siblingIsChecked };
       })
       .sort((a, b) => {
+        if (a.siblingIsChecked !== b.siblingIsChecked) {
+          return a.siblingIsChecked ? -1 : 1;
+        }
         if (a.immediateBreed !== b.immediateBreed) {
           return b.immediateBreed - a.immediateBreed;
         }
