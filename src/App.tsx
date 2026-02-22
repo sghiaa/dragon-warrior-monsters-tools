@@ -13,6 +13,7 @@ import './App.css';
 
 function App() {
   const [ownedMonsters, setOwnedMonsters] = useState<OwnedMonster[]>([]);
+  const [hasHydratedStorage, setHasHydratedStorage] = useState(false);
   const [activeTab, setActiveTab] = useState<'collection' | 'possibilities' | 'planner' | 'unlimited'>('collection');
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const [breedingPlans, setBreedingPlans] = useState<Record<string, BreedingPlanType>>({});
@@ -87,19 +88,26 @@ function App() {
     if (typeof uiState.plannerSeedMonsterIds !== 'undefined') {
       setPlannerSeedMonsterIds(uiState.plannerSeedMonsterIds || null);
     }
+    setHasHydratedStorage(true);
   }, []);
 
   useEffect(() => {
+    if (!hasHydratedStorage) {
+      return;
+    }
     saveToStorage(userMonsters, ownedMonsters);
-  }, [userMonsters, ownedMonsters]);
+  }, [hasHydratedStorage, userMonsters, ownedMonsters]);
 
   useEffect(() => {
+    if (!hasHydratedStorage) {
+      return;
+    }
     saveUiState({
       activeTab,
       selectedGoals,
       plannerSeedMonsterIds
     });
-  }, [activeTab, selectedGoals, plannerSeedMonsterIds]);
+  }, [hasHydratedStorage, activeTab, selectedGoals, plannerSeedMonsterIds]);
 
   useEffect(() => {
     if (selectedGoals.length === 0) {

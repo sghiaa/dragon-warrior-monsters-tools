@@ -172,11 +172,34 @@ export const computeAutoAssignments = (
     return !set.has(path) && !isBlocked(path, set);
   };
 
+  const isGenderCompatible = (goalId: string, path: string, owned: OwnedMonster) => {
+    const siblingPath = getSiblingPath(path);
+    if (!siblingPath) {
+      return true;
+    }
+
+    const siblingIsChecked = result[goalId].checkedNodes.includes(siblingPath);
+    if (!siblingIsChecked) {
+      return true;
+    }
+
+    const siblingGender = result[goalId].checkedNodeGenders[siblingPath];
+    if (!siblingGender) {
+      return true;
+    }
+
+    return siblingGender !== owned.gender;
+  };
+
   // Pass 1: assign all exact species matches first.
   const remainingOwned: OwnedMonster[] = [];
   for (const owned of ownedMonsters) {
     const exactCandidates = monsterSlots
-      .filter((slot) => slot.speciesId === owned.monsterId && isSlotAvailable(slot.goalId, slot.path))
+      .filter((slot) =>
+        slot.speciesId === owned.monsterId &&
+        isSlotAvailable(slot.goalId, slot.path) &&
+        isGenderCompatible(slot.goalId, slot.path, owned)
+      )
       .map((slot) => {
         const siblingPath = getSiblingPath(slot.path);
         const siblingAssignedGender = siblingPath
@@ -230,7 +253,11 @@ export const computeAutoAssignments = (
     }
 
     const familyCandidates = familySlots
-      .filter((slot) => slot.family === family && isSlotAvailable(slot.goalId, slot.path))
+      .filter((slot) =>
+        slot.family === family &&
+        isSlotAvailable(slot.goalId, slot.path) &&
+        isGenderCompatible(slot.goalId, slot.path, owned)
+      )
       .map((slot) => {
         const siblingAssignedGender = slot.siblingPath
           ? result[slot.goalId].checkedNodeGenders[slot.siblingPath]

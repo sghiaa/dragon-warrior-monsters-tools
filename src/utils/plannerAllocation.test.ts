@@ -156,7 +156,7 @@ describe('computeAutoAssignments', () => {
     expect(assignments.goal_landowl.checkedNodeGenders['root.R']).toBe('female');
   });
 
-  it('preserves owned genders for checked sibling pair', () => {
+  it('does not assign same-gender monsters into a checked sibling pair', () => {
     const selectedGoals = ['goal_landowl'];
     const breedingPlans: Record<string, BreedingPlan> = {
       goal_landowl: {
@@ -181,9 +181,9 @@ describe('computeAutoAssignments', () => {
     const assignments = computeAutoAssignments(selectedGoals, breedingPlans, owned);
 
     expect(assignments.goal_landowl.checkedNodes).toContain('root.L');
-    expect(assignments.goal_landowl.checkedNodes).toContain('root.R');
+    expect(assignments.goal_landowl.checkedNodes).not.toContain('root.R');
     expect(assignments.goal_landowl.checkedNodeGenders['root.L']).toBe('male');
-    expect(assignments.goal_landowl.checkedNodeGenders['root.R']).toBe('male');
+    expect(assignments.goal_landowl.checkedNodeGenders['root.R']).toBe('female');
   });
 
   it('prioritizes exact-match placement in the branch that is closer to completion', () => {
@@ -223,5 +223,64 @@ describe('computeAutoAssignments', () => {
     expect(assignments.goal_darkdrium_like.checkedNodes).toContain('root.R.L');
     expect(assignments.goal_darkdrium_like.checkedNodes).toContain('root.R.R');
     expect(assignments.goal_darkdrium_like.checkedNodes).not.toContain('root.L.R');
+  });
+
+  it('enforces opposite-gender pairing for family-slot assignment', () => {
+    const selectedGoals = ['goal_gender_pair'];
+    const breedingPlans: Record<string, BreedingPlan> = {
+      goal_gender_pair: {
+        targetMonster: 'goal_gender_pair',
+        steps: [],
+        isPossible: true,
+        missingMonsters: [],
+        tree: {
+          kind: 'monster',
+          value: 'goal_gender_pair',
+          left: { kind: 'monster', value: 'bullbird' },
+          right: { kind: 'family', value: 'Any Devil' }
+        }
+      }
+    };
+
+    const owned: OwnedMonster[] = [
+      { id: 'owned-bullbird', monsterId: 'bullbird', gender: 'male', nickname: 'Bull' },
+      { id: 'owned-devil', monsterId: 'devila', gender: 'male', nickname: 'Dev' }
+    ];
+
+    const assignments = computeAutoAssignments(selectedGoals, breedingPlans, owned);
+
+    expect(assignments.goal_gender_pair.checkedNodes).toContain('root.L');
+    expect(assignments.goal_gender_pair.checkedNodes).not.toContain('root.R');
+  });
+
+  it('assigns a compatible opposite-gender monster into the sibling slot when available', () => {
+    const selectedGoals = ['goal_gender_pair_ok'];
+    const breedingPlans: Record<string, BreedingPlan> = {
+      goal_gender_pair_ok: {
+        targetMonster: 'goal_gender_pair_ok',
+        steps: [],
+        isPossible: true,
+        missingMonsters: [],
+        tree: {
+          kind: 'monster',
+          value: 'goal_gender_pair_ok',
+          left: { kind: 'monster', value: 'bullbird' },
+          right: { kind: 'family', value: 'Any Devil' }
+        }
+      }
+    };
+
+    const owned: OwnedMonster[] = [
+      { id: 'owned-bullbird', monsterId: 'bullbird', gender: 'male', nickname: 'Bull' },
+      { id: 'owned-devil-m', monsterId: 'devila', gender: 'male', nickname: 'DevM' },
+      { id: 'owned-devil-f', monsterId: 'devila', gender: 'female', nickname: 'DevF' }
+    ];
+
+    const assignments = computeAutoAssignments(selectedGoals, breedingPlans, owned);
+
+    expect(assignments.goal_gender_pair_ok.checkedNodes).toContain('root.L');
+    expect(assignments.goal_gender_pair_ok.checkedNodes).toContain('root.R');
+    expect(assignments.goal_gender_pair_ok.checkedNodeGenders['root.R']).toBe('female');
+    expect(assignments.goal_gender_pair_ok.checkedNodeNames['root.R']).toBe('DevF');
   });
 });
