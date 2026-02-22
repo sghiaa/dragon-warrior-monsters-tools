@@ -38,6 +38,20 @@ function App() {
 
     return counts;
   }, [dataLoaded, userMonsters, plannerSeedMonsterIds]);
+  const stableStepCounts = useMemo(() => {
+    if (!dataLoaded) {
+      return {};
+    }
+
+    const pathfinder = new BreedingPathfinder(userMonsters);
+    const counts: Record<string, number> = {};
+    MONSTERS.forEach((monster) => {
+      const plan = pathfinder.findBreedingPath(monster.id);
+      counts[monster.id] = plan.isPossible ? plan.steps.length : -1;
+    });
+
+    return counts;
+  }, [dataLoaded, userMonsters]);
   const autoAssignmentsByGoal = useMemo(() => {
     return computeAutoAssignments(selectedGoals, breedingPlans, ownedMonsters);
   }, [selectedGoals, breedingPlans, ownedMonsters]);
@@ -204,6 +218,7 @@ function App() {
             {activeTab === 'collection' && (
               <MonsterList
                 ownedMonsters={ownedMonsters}
+                monsterStepCounts={stableStepCounts}
                 onOwnedMonsterAdd={handleOwnedMonsterAdd}
                 onOwnedMonsterRemove={handleOwnedMonsterRemove}
               />

@@ -18,6 +18,11 @@ export const BreedingPlan: React.FC<BreedingPlanProps> = ({ plan, goalStateKey, 
   const [checkedNodes, setCheckedNodes] = useState<Set<string>>(new Set());
   const [checkedNodeGenders, setCheckedNodeGenders] = useState<Record<string, Gender>>({});
   const [checkedNodeNames, setCheckedNodeNames] = useState<Record<string, string>>({});
+  const prefill = useMemo(() => autoAssignment || {
+    checkedNodes: [] as string[],
+    checkedNodeGenders: {} as Record<string, Gender>,
+    checkedNodeNames: {} as Record<string, string>
+  }, [autoAssignment]);
 
   const getMonsterName = (monsterId: string): string => {
     const monster = getMonsterById(monsterId);
@@ -88,11 +93,6 @@ export const BreedingPlan: React.FC<BreedingPlanProps> = ({ plan, goalStateKey, 
   }, [adjustedRemaining]);
 
   useEffect(() => {
-    const prefill = autoAssignment || {
-      checkedNodes: [] as string[],
-      checkedNodeGenders: {} as Record<string, Gender>,
-      checkedNodeNames: {} as Record<string, string>
-    };
     const saved = loadPlannerProgress(goalStateKey);
     if (!saved) {
       setCheckedNodes(new Set(prefill.checkedNodes));
@@ -101,20 +101,28 @@ export const BreedingPlan: React.FC<BreedingPlanProps> = ({ plan, goalStateKey, 
       return;
     }
 
-    const mergedCheckedNodes = new Set([...(saved.checkedNodes || []), ...prefill.checkedNodes]);
-    const prefillCheckedSet = new Set(prefill.checkedNodes);
-    const mergedGenders: Record<string, Gender> = { ...(saved.checkedNodeGenders || {}) };
-    Object.entries(prefill.checkedNodeGenders).forEach(([path, gender]) => {
-      // Stable-derived checked assignments should always win over stale saved state.
-      if (prefillCheckedSet.has(path) || !mergedGenders[path]) {
+    const previousAutoChecked = new Set(saved.autoCheckedNodes || []);
+    const savedManualChecked = (saved.checkedNodes || []).filter((path) => !previousAutoChecked.has(path));
+    const mergedCheckedNodes = new Set([...savedManualChecked, ...prefill.checkedNodes]);
+
+    const mergedGenders: Record<string, Gender> = { ...prefill.checkedNodeGenders };
+    Object.entries(saved.checkedNodeGenders || {}).forEach(([path, gender]) => {
+      if (!previousAutoChecked.has(path)) {
         mergedGenders[path] = gender;
+      }
+    });
+
+    const mergedNames: Record<string, string> = { ...prefill.checkedNodeNames };
+    Object.entries(saved.checkedNodeNames || {}).forEach(([path, name]) => {
+      if (!previousAutoChecked.has(path)) {
+        mergedNames[path] = name;
       }
     });
 
     setCheckedNodes(mergedCheckedNodes);
     setCheckedNodeGenders(mergedGenders);
-    setCheckedNodeNames({ ...prefill.checkedNodeNames, ...(saved.checkedNodeNames || {}) });
-  }, [goalStateKey, autoAssignment]);
+    setCheckedNodeNames(mergedNames);
+  }, [goalStateKey, prefill]);
 
   useEffect(() => {
     if (!goalStateKey) {
@@ -123,11 +131,18 @@ export const BreedingPlan: React.FC<BreedingPlanProps> = ({ plan, goalStateKey, 
 
     savePlannerProgress(goalStateKey, {
       checkedNodes: Array.from(checkedNodes),
+      autoCheckedNodes: prefill.checkedNodes,
       checkedNodeGenders,
       checkedNodeNames,
       lastUpdated: new Date().toISOString()
     });
-  }, [goalStateKey, checkedNodes, checkedNodeGenders, checkedNodeNames]);
+  }, [
+    goalStateKey,
+    checkedNodes,
+    checkedNodeGenders,
+    checkedNodeNames,
+    prefill.checkedNodes
+  ]);
 
   if (plan.isPossible && plan.steps.length === 0) {
     return (

@@ -12,6 +12,8 @@ export interface StorageData {
 
 export interface PlannerProgressState {
   checkedNodes: string[];
+  // Paths that were auto-filled from the stable at save time.
+  autoCheckedNodes?: string[];
   checkedNodeGenders: Record<string, Gender>;
   checkedNodeNames: Record<string, string>;
   lastUpdated: string;

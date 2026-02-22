@@ -107,6 +107,24 @@ body {
   gap: 0.75rem;
 }
 
+.stable-gender-sections {
+  display: grid;
+  gap: 1rem;
+}
+
+.stable-gender-section {
+  border: 1px solid #e3e8f2;
+  border-radius: 10px;
+  padding: 0.75rem;
+  background: #fbfcff;
+}
+
+.stable-gender-heading {
+  margin-bottom: 0.65rem;
+  color: #294266;
+  font-size: 1.05rem;
+}
+
 .stable-gender-pill {
   font-size: 0.75rem;
   font-weight: 700;
@@ -114,6 +132,84 @@ body {
   border: 1px solid #c8d4e9;
   border-radius: 999px;
   padding: 0.15rem 0.5rem;
+}
+
+.stable-family-pill {
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: #ffffff;
+  border: 1px solid #c8d4e9;
+  color: #4a5f83;
+  border-radius: 999px;
+  padding: 0.15rem 0.5rem;
+  margin-left: 0.35rem;
+}
+
+.stable-family-pill.family-slime {
+  background: #eaf9ff;
+  border-color: #86ccee;
+  color: #1f6f95;
+}
+
+.stable-family-pill.family-dragon {
+  background: #fff1e8;
+  border-color: #e9a77a;
+  color: #9a4a1e;
+}
+
+.stable-family-pill.family-beast {
+  background: #fdf3e7;
+  border-color: #d2ad79;
+  color: #7b5628;
+}
+
+.stable-family-pill.family-bird {
+  background: #eff9eb;
+  border-color: #a6d39a;
+  color: #2f7145;
+}
+
+.stable-family-pill.family-plant {
+  background: #eaf7e6;
+  border-color: #9cc98a;
+  color: #2f6a2a;
+}
+
+.stable-family-pill.family-bug {
+  background: #fdf8dc;
+  border-color: #d7c56f;
+  color: #7c6b18;
+}
+
+.stable-family-pill.family-devil,
+.stable-family-pill.family-demon {
+  background: #f5ecff;
+  border-color: #bba0ea;
+  color: #55348f;
+}
+
+.stable-family-pill.family-undead {
+  background: #f0f0f0;
+  border-color: #b7bcc6;
+  color: #4b5565;
+}
+
+.stable-family-pill.family-material {
+  background: #eef2f6;
+  border-color: #acb8c9;
+  color: #405268;
+}
+
+.stable-family-pill.family-water {
+  background: #e8f4ff;
+  border-color: #99c2f1;
+  color: #2d5e91;
+}
+
+.stable-family-pill.family-boss {
+  background: #fff0f4;
+  border-color: #e3a4bb;
+  color: #8a3555;
 }
 
 .stable-remove {
