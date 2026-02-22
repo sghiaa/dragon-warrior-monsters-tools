@@ -64,14 +64,19 @@ export const GoalSelector: React.FC<GoalSelectorProps> = ({ onGoalChange, select
           <span className="goal-label">Current Goals:</span>
           <div className="goal-list">
             {selectedGoals.map((goalId) => (
-              <button
-                key={goalId}
-                className="goal-name removable"
-                onClick={() => removeGoal(goalId)}
-                title="Remove goal"
-              >
-                {getMonsterName(goalId)} ×
-              </button>
+              <div key={goalId} className="goal-name removable">
+                <a href={`#monster/${goalId}`} className="monster-link">
+                  {getMonsterName(goalId)}
+                </a>
+                <button
+                  type="button"
+                  className="goal-remove-btn"
+                  onClick={() => removeGoal(goalId)}
+                  title="Remove goal"
+                >
+                  ×
+                </button>
+              </div>
             ))}
           </div>
           <button 
@@ -107,7 +112,16 @@ export const GoalSelector: React.FC<GoalSelectorProps> = ({ onGoalChange, select
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => addGoal(monster.id)}
                 >
-                  <span>{monster.name}</span>
+                  <span>
+                    {monster.name}{' '}
+                    <a
+                      href={`#monster/${monster.id}`}
+                      className="monster-link"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      (view)
+                    </a>
+                  </span>
                   <span className="combobox-meta">
                     {goalStepCounts[monster.id] >= 0 ? `${goalStepCounts[monster.id]} steps` : 'No route'}
                   </span>

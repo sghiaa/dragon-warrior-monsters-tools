@@ -3,155 +3,14 @@ import { MONSTERS } from '../data/monsters';
 import { calculateReachableMonsters, getDerivationSteps, DerivationParent } from '../utils/breedingReachability';
 import { Search, Sparkles } from 'lucide-react';
 
-const normalizeId = (value: string): string =>
-  value.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
-
-const OASIS_MONSTER_NAMES = [
-  'Gophecada',
-  'Gohopper',
-  'Gulpple',
-  'Cactiball',
-  'Amberweed',
-  'Catapila',
-  'Giantworm',
-  'Taileater',
-  'Eyeder',
-  'Crestpent',
-  'Kingcobra',
-  'Minidrak',
-  'Gasgon',
-  'Stagbug',
-  'Evilseed',
-  'Goopi',
-  'Snaily',
-  'Babble',
-  'Drakslime',
-  'Slimenite',
-  'Picky',
-  'Madpecker',
-  'Bullbird',
-  'Bigroost',
-  'Wyvern'
-];
-
-const PIRATE_MONSTER_NAMES = [
-  'Catfly',
-  'Madgopher',
-  'Almiraj',
-  'Spotslime',
-  'Treeslime',
-  'Tropicgel',
-  'Pearlgel',
-  'Fireweed',
-  'Floraman',
-  'Toadstool',
-  'Brushead',
-  'Facer',
-  'Voodoll',
-  'Stubbird',
-  'Rotraven',
-  'Putrepup',
-  'Darkcrab',
-  'Foxfire',
-  'Catmage',
-  'Arrowdog',
-  'Hammerman',
-  'Dumbira',
-  'Orc',
-  'Armycrab',
-  'Armorpede',
-  'Droll',
-  'MultiEyes',
-  'Haloslime',
-  'Healer',
-  'Metaly',
-  'Drygon',
-  'Poisongon',
-  'Chamelgon',
-  'Funkybird',
-  'Emyu'
-];
-
-const ICE_MONSTER_NAMES = [
-  'Beastnite',
-  'Treeboy',
-  'FooHero',
-  'Dragonkid',
-  'Crestpent',
-  'Wingsnake',
-  'Chamelgon',
-  'Metaly',
-  'Rockslime',
-  'Fangslime',
-  'Reaper',
-  'Windmerge',
-  'Pompombom',
-  'Grizzly',
-  'Landowl',
-  'Wildape',
-  'WalrusMan',
-  'CancerMan',
-  'Inverzon',
-  'Hork',
-  'Deadnite',
-  'Maddragon',
-  'Andreal',
-  'Dragon',
-  'Facetree',
-  'Stubsuck',
-  'Ghostree',
-  'Tortragon',
-  'Lizardman',
-  'Swordgon',
-  'Unicorn',
-  'Goategon',
-  'Yeti',
-  'BigEye',
-  'Captdead'
-];
-
-const SKY_MONSTER_NAMES = [
-  'Mimeslime',
-  'Superten',
-  'Sickler',
-  'Herbman',
-  'Gismo',
-  'BigEye',
-  'WhaleMage',
-  'Madcat',
-  'Gulpbeast',
-  'Trumpeter',
-  'Giantmoth',
-  'Madhornet',
-  'Belzebub',
-  'Ironturt',
-  'Spikerous',
-  'Hornbeet',
-  'Golem',
-  'Coatol',
-  'Slime',
-  'Kingslime',
-  'Gigantes',
-  'Grendal',
-  'Centasaur',
-  'Spotking',
-  'Ogre',
-  'Battlerex',
-  'Bosstroll',
-  'Evilwell',
-  'Digster',
-  'Octoraid',
-  'Agdevil',
-  'Lionex',
-  'Gateguard',
-  'Whipbird',
-  'Phoenix',
-  'Blizzardy',
-  'Zapbird',
-  'Arcdemon',
-  'Lampgenie',
-  'Balzak'
-];
+const getWorldPresetMonsterIds = (worldName: string): string[] => {
+  const target = `${worldName.toLowerCase()} key world`;
+  return MONSTERS.filter((monster) =>
+    (monster.spawnLocations || []).some((location) =>
+      location.map.toLowerCase().includes(target)
+    )
+  ).map((monster) => monster.id);
+};
 
 const getMonsterName = (monsterId: string): string => {
   const monster = MONSTERS.find((m) => m.id === monsterId);
@@ -173,23 +32,23 @@ export const UnlimitedBreeding: React.FC<UnlimitedBreedingProps> = ({ onPinToPla
   }, []);
 
   const oasisMonsterIds = useMemo(() => {
-    const oasisSet = new Set(OASIS_MONSTER_NAMES.map(normalizeId));
-    return MONSTERS.filter((monster) => oasisSet.has(monster.id)).map((monster) => monster.id);
+    return getWorldPresetMonsterIds('oasis');
   }, []);
 
   const pirateMonsterIds = useMemo(() => {
-    const pirateSet = new Set(PIRATE_MONSTER_NAMES.map(normalizeId));
-    return MONSTERS.filter((monster) => pirateSet.has(monster.id)).map((monster) => monster.id);
+    return getWorldPresetMonsterIds('pirate');
   }, []);
 
   const iceMonsterIds = useMemo(() => {
-    const iceSet = new Set(ICE_MONSTER_NAMES.map(normalizeId));
-    return MONSTERS.filter((monster) => iceSet.has(monster.id)).map((monster) => monster.id);
+    return getWorldPresetMonsterIds('ice');
   }, []);
 
   const skyMonsterIds = useMemo(() => {
-    const skySet = new Set(SKY_MONSTER_NAMES.map(normalizeId));
-    return MONSTERS.filter((monster) => skySet.has(monster.id)).map((monster) => monster.id);
+    return getWorldPresetMonsterIds('sky');
+  }, []);
+
+  const limboMonsterIds = useMemo(() => {
+    return getWorldPresetMonsterIds('limbo');
   }, []);
 
   const isOasisSelected = useMemo(() => {
@@ -219,6 +78,13 @@ export const UnlimitedBreeding: React.FC<UnlimitedBreedingProps> = ({ onPinToPla
     }
     return skyMonsterIds.every((id) => selectedMonsterIds.has(id));
   }, [skyMonsterIds, selectedMonsterIds]);
+
+  const isLimboSelected = useMemo(() => {
+    if (limboMonsterIds.length === 0) {
+      return false;
+    }
+    return limboMonsterIds.every((id) => selectedMonsterIds.has(id));
+  }, [limboMonsterIds, selectedMonsterIds]);
 
   const filteredMonsters = useMemo(() => {
     return MONSTERS.filter((monster) => {
@@ -303,11 +169,27 @@ export const UnlimitedBreeding: React.FC<UnlimitedBreedingProps> = ({ onPinToPla
     });
   };
 
-  const formatParent = (parent: DerivationParent): string => {
+  const toggleLimboPreset = () => {
+    setSelectedMonsterIds((prev) => {
+      const next = new Set(prev);
+      if (isLimboSelected) {
+        limboMonsterIds.forEach((id) => next.delete(id));
+      } else {
+        limboMonsterIds.forEach((id) => next.add(id));
+      }
+      return next;
+    });
+  };
+
+  const formatParent = (parent: DerivationParent): React.ReactNode => {
     if (parent.kind === 'family') {
       return `Any ${parent.value}`;
     }
-    return getMonsterName(parent.value);
+    return (
+      <a href={`#monster/${parent.value}`} className="monster-link">
+        {getMonsterName(parent.value)}
+      </a>
+    );
   };
 
   return (
@@ -346,6 +228,12 @@ export const UnlimitedBreeding: React.FC<UnlimitedBreedingProps> = ({ onPinToPla
           onClick={toggleSkyPreset}
         >
           Sky
+        </button>
+        <button
+          className={`preset-toggle ${isLimboSelected ? 'active' : ''}`}
+          onClick={toggleLimboPreset}
+        >
+          Limbo
         </button>
       </div>
 
@@ -388,9 +276,19 @@ export const UnlimitedBreeding: React.FC<UnlimitedBreedingProps> = ({ onPinToPla
                     className="monster-checkbox"
                   />
                   <div className="monster-option-content">
-                    <h3>{monster.name}</h3>
+                    <h3>
+                      <a
+                        href={`#monster/${monster.id}`}
+                        className="monster-link"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        {monster.name}
+                      </a>
+                    </h3>
                     <div className="monster-meta">
-                      <span className="family">{monster.family}</span>
+                      <span className={`stable-family-pill family-${monster.family.toLowerCase()}`}>
+                        {monster.family}
+                      </span>
                       <span className="rank">Rank {monster.rank}</span>
                     </div>
                   </div>
@@ -418,14 +316,25 @@ export const UnlimitedBreeding: React.FC<UnlimitedBreedingProps> = ({ onPinToPla
                     className={`reachable-item ${selectedResultId === monsterId ? 'active' : ''}`}
                     onClick={() => setSelectedResultId(monsterId)}
                   >
-                    {getMonsterName(monsterId)}
+                    <a
+                      href={`#monster/${monsterId}`}
+                      className="monster-link"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      {getMonsterName(monsterId)}
+                    </a>
                   </button>
                 ))}
               </div>
 
               {selectedResultId && (
                 <div className="derivation-panel">
-                  <h4>Sample chain to {getMonsterName(selectedResultId)}</h4>
+                  <h4>
+                    Sample chain to{' '}
+                    <a href={`#monster/${selectedResultId}`} className="monster-link">
+                      {getMonsterName(selectedResultId)}
+                    </a>
+                  </h4>
                   <button
                     className="pin-to-planner"
                     onClick={() => onPinToPlanner(selectedResultId, Array.from(selectedMonsterIds))}
@@ -438,7 +347,10 @@ export const UnlimitedBreeding: React.FC<UnlimitedBreedingProps> = ({ onPinToPla
                     <ol className="derivation-list">
                       {derivationSteps.map((step, index) => (
                         <li key={`${step.resultId}-${index}`}>
-                          {formatParent(step.parent1)} + {formatParent(step.parent2)} = {getMonsterName(step.resultId)}
+                          {formatParent(step.parent1)} + {formatParent(step.parent2)} ={' '}
+                          <a href={`#monster/${step.resultId}`} className="monster-link">
+                            {getMonsterName(step.resultId)}
+                          </a>
                         </li>
                       ))}
                     </ol>

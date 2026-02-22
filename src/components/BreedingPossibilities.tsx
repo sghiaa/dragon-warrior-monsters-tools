@@ -37,6 +37,11 @@ export const BreedingPossibilities: React.FC<BreedingPossibilitiesProps> = ({ us
 
   const validPossibilities = possibilities.filter(p => p.hasValidGenders);
   const invalidPossibilities = possibilities.filter(p => !p.hasValidGenders);
+  const renderMonsterLink = (monsterId: string, fallbackName: string) => (
+    <a href={`#monster/${monsterId}`} className="monster-link">
+      {fallbackName}
+    </a>
+  );
 
   return (
     <div className="breeding-possibilities">
@@ -73,15 +78,15 @@ export const BreedingPossibilities: React.FC<BreedingPossibilitiesProps> = ({ us
               <div key={index} className="possibility-card valid">
                 <div className="breeding-combination possibility-formula">
                   <div className="parent">
-                    <span className="monster-name">{possibility.parent1Name}</span>
+                    <span className="monster-name">{renderMonsterLink(possibility.parent1, possibility.parent1Name)}</span>
                   </div>
                   <div className="breeding-symbol">+</div>
                   <div className="parent">
-                    <span className="monster-name">{possibility.parent2Name}</span>
+                    <span className="monster-name">{renderMonsterLink(possibility.parent2, possibility.parent2Name)}</span>
                   </div>
                   <div className="breeding-symbol">=</div>
                   <div className="result">
-                    <span className="monster-name result-name">{possibility.resultName}</span>
+                    <span className="monster-name result-name">{renderMonsterLink(possibility.result, possibility.resultName)}</span>
                   </div>
                 </div>
                 <div className="possibility-status">
@@ -105,15 +110,15 @@ export const BreedingPossibilities: React.FC<BreedingPossibilitiesProps> = ({ us
               <div key={index} className="possibility-card invalid">
                 <div className="breeding-combination possibility-formula">
                   <div className="parent">
-                    <span className="monster-name">{possibility.parent1Name}</span>
+                    <span className="monster-name">{renderMonsterLink(possibility.parent1, possibility.parent1Name)}</span>
                   </div>
                   <div className="breeding-symbol">+</div>
                   <div className="parent">
-                    <span className="monster-name">{possibility.parent2Name}</span>
+                    <span className="monster-name">{renderMonsterLink(possibility.parent2, possibility.parent2Name)}</span>
                   </div>
                   <div className="breeding-symbol">=</div>
                   <div className="result">
-                    <span className="monster-name result-name">{possibility.resultName}</span>
+                    <span className="monster-name result-name">{renderMonsterLink(possibility.result, possibility.resultName)}</span>
                   </div>
                 </div>
                 <div className="possibility-status">

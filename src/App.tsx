@@ -4,8 +4,9 @@ import { BreedingPossibilities } from './components/BreedingPossibilities';
 import { GoalSelector } from './components/GoalSelector';
 import { BreedingPlan } from './components/BreedingPlan';
 import { UnlimitedBreeding } from './components/UnlimitedBreeding';
+import { MonsterDetail } from './components/MonsterDetail';
 import { loadFromStorage, loadUiState, saveToStorage, saveUiState } from './utils/storage';
-import { BreedingPlan as BreedingPlanType, OwnedMonster } from './types/monster';
+import { BreedingPlan as BreedingPlanType, OwnedKey, OwnedMonster } from './types/monster';
 import { initializeData, MONSTERS } from './data/monsters';
 import { BreedingPathfinder } from './utils/breedingPathfinder';
 import { computeAutoAssignments, deriveUserMonstersFromOwned } from './utils/plannerAllocation';
@@ -13,12 +14,14 @@ import './App.css';
 
 function App() {
   const [ownedMonsters, setOwnedMonsters] = useState<OwnedMonster[]>([]);
+  const [ownedKeys, setOwnedKeys] = useState<OwnedKey[]>([]);
   const [hasHydratedStorage, setHasHydratedStorage] = useState(false);
   const [activeTab, setActiveTab] = useState<'collection' | 'possibilities' | 'planner' | 'unlimited'>('collection');
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const [breedingPlans, setBreedingPlans] = useState<Record<string, BreedingPlanType>>({});
   const [plannerSeedMonsterIds, setPlannerSeedMonsterIds] = useState<string[] | null>(null);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [monsterDetailId, setMonsterDetailId] = useState<string | null>(null);
   const plannerSeedKey = (plannerSeedMonsterIds || []).slice().sort().join(',');
   const userMonsters = useMemo(() => deriveUserMonstersFromOwned(ownedMonsters), [ownedMonsters]);
   const goalStepCounts = useMemo(() => {
@@ -64,6 +67,22 @@ function App() {
   }, []);
 
   useEffect(() => {
+    const readMonsterHash = () => {
+      const hash = window.location.hash.replace(/^#\/?/, '');
+      if (hash.startsWith('monster/')) {
+        const id = decodeURIComponent(hash.slice('monster/'.length));
+        setMonsterDetailId(id || null);
+      } else {
+        setMonsterDetailId(null);
+      }
+    };
+
+    readMonsterHash();
+    window.addEventListener('hashchange', readMonsterHash);
+    return () => window.removeEventListener('hashchange', readMonsterHash);
+  }, []);
+
+  useEffect(() => {
     const storedData = loadFromStorage();
     if (storedData.ownedMonsters.length > 0) {
       setOwnedMonsters(storedData.ownedMonsters);
@@ -90,6 +109,7 @@ function App() {
       });
       setOwnedMonsters(migratedOwned);
     }
+    setOwnedKeys(storedData.ownedKeys || []);
     const uiState = loadUiState();
     if (uiState.activeTab) {
       setActiveTab(uiState.activeTab);
@@ -109,8 +129,8 @@ function App() {
     if (!hasHydratedStorage) {
       return;
     }
-    saveToStorage(userMonsters, ownedMonsters);
-  }, [hasHydratedStorage, userMonsters, ownedMonsters]);
+    saveToStorage(userMonsters, ownedMonsters, ownedKeys);
+  }, [hasHydratedStorage, userMonsters, ownedMonsters, ownedKeys]);
 
   useEffect(() => {
     if (!hasHydratedStorage) {
@@ -153,6 +173,21 @@ function App() {
 
   const handleOwnedMonsterRemove = (ownedMonsterId: string) => {
     setOwnedMonsters((prev) => prev.filter((owned) => owned.id !== ownedMonsterId));
+  };
+
+  const handleOwnedKeyAdd = (descriptor: string, family: string) => {
+    setOwnedKeys((prev) => [
+      ...prev,
+      {
+        id: `${descriptor}-${family}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        descriptor,
+        family
+      }
+    ]);
+  };
+
+  const handleOwnedKeyRemove = (ownedKeyId: string) => {
+    setOwnedKeys((prev) => prev.filter((key) => key.id !== ownedKeyId));
   };
 
   const handleGoalChange = (monsterIds: string[]) => {
@@ -215,59 +250,73 @@ function App() {
           </div>
 
           <main className="app-main">
-            {activeTab === 'collection' && (
-              <MonsterList
-                ownedMonsters={ownedMonsters}
-                monsterStepCounts={stableStepCounts}
-                onOwnedMonsterAdd={handleOwnedMonsterAdd}
-                onOwnedMonsterRemove={handleOwnedMonsterRemove}
+            {monsterDetailId ? (
+              <MonsterDetail
+                monsterId={monsterDetailId}
+                onBack={() => {
+                  window.location.hash = '';
+                }}
               />
-            )}
-
-            {activeTab === 'possibilities' && (
-              <BreedingPossibilities userMonsters={userMonsters} />
-            )}
-
-            {activeTab === 'planner' && (
+            ) : (
               <>
-                <GoalSelector
-                  onGoalChange={handleGoalChange}
-                  selectedGoals={selectedGoals}
-                  goalStepCounts={goalStepCounts}
-                />
+                {activeTab === 'collection' && (
+                  <MonsterList
+                    ownedMonsters={ownedMonsters}
+                    ownedKeys={ownedKeys}
+                    monsterStepCounts={stableStepCounts}
+                    onOwnedMonsterAdd={handleOwnedMonsterAdd}
+                    onOwnedMonsterRemove={handleOwnedMonsterRemove}
+                    onOwnedKeyAdd={handleOwnedKeyAdd}
+                    onOwnedKeyRemove={handleOwnedKeyRemove}
+                  />
+                )}
 
-                <div className="planner-output">
-                  {selectedGoals.length === 0 && (
-                    <div className="no-goal">
-                      <h2>Select one or more goal monsters to build breeding plans</h2>
-                      <p>
-                        Pick targets above, then this planner will generate step-by-step paths
-                        using your current monster inventory and available genders.
-                      </p>
+                {activeTab === 'possibilities' && (
+                  <BreedingPossibilities userMonsters={userMonsters} />
+                )}
+
+                {activeTab === 'planner' && (
+                  <>
+                    <GoalSelector
+                      onGoalChange={handleGoalChange}
+                      selectedGoals={selectedGoals}
+                      goalStepCounts={goalStepCounts}
+                    />
+
+                    <div className="planner-output">
+                      {selectedGoals.length === 0 && (
+                        <div className="no-goal">
+                          <h2>Select one or more goal monsters to build breeding plans</h2>
+                          <p>
+                            Pick targets above, then this planner will generate step-by-step paths
+                            using your current monster inventory and available genders.
+                          </p>
+                        </div>
+                      )}
+
+                      {selectedGoals.map((goalId) => {
+                        const plan = breedingPlans[goalId];
+                        if (!plan) {
+                          return null;
+                        }
+                        const plannerGoalStateKey = `${goalId}::${plannerSeedKey}`;
+                        return (
+                          <BreedingPlan
+                            key={plannerGoalStateKey}
+                            plan={plan}
+                            goalStateKey={plannerGoalStateKey}
+                            autoAssignment={autoAssignmentsByGoal[goalId]}
+                          />
+                        );
+                      })}
                     </div>
-                  )}
+                  </>
+                )}
 
-                  {selectedGoals.map((goalId) => {
-                    const plan = breedingPlans[goalId];
-                    if (!plan) {
-                      return null;
-                    }
-                    const plannerGoalStateKey = `${goalId}::${plannerSeedKey}`;
-                    return (
-                      <BreedingPlan
-                        key={plannerGoalStateKey}
-                        plan={plan}
-                        goalStateKey={plannerGoalStateKey}
-                        autoAssignment={autoAssignmentsByGoal[goalId]}
-                      />
-                    );
-                  })}
-                </div>
+                {activeTab === 'unlimited' && (
+                  <UnlimitedBreeding onPinToPlanner={handlePinToPlanner} />
+                )}
               </>
-            )}
-
-            {activeTab === 'unlimited' && (
-              <UnlimitedBreeding onPinToPlanner={handlePinToPlanner} />
             )}
           </main>
         </>

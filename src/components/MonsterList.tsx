@@ -1,26 +1,35 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Gender, OwnedMonster } from '../types/monster';
+import { Gender, OwnedKey, OwnedMonster } from '../types/monster';
 import { MONSTERS, getMonsterById } from '../data/monsters';
+import { KEY_DESCRIPTORS, KEY_FAMILY_BY_CODE, KEY_FAMILY_OPTIONS } from '../data/keys';
 import { Plus, Trash2 } from 'lucide-react';
 
 interface MonsterListProps {
   ownedMonsters: OwnedMonster[];
+  ownedKeys: OwnedKey[];
   monsterStepCounts: Record<string, number>;
   onOwnedMonsterAdd: (monsterId: string, gender: Gender, nickname: string) => void;
   onOwnedMonsterRemove: (ownedMonsterId: string) => void;
+  onOwnedKeyAdd: (descriptor: string, family: string) => void;
+  onOwnedKeyRemove: (ownedKeyId: string) => void;
 }
 
 export const MonsterList: React.FC<MonsterListProps> = ({
   ownedMonsters,
+  ownedKeys,
   monsterStepCounts,
   onOwnedMonsterAdd,
-  onOwnedMonsterRemove
+  onOwnedMonsterRemove,
+  onOwnedKeyAdd,
+  onOwnedKeyRemove
 }) => {
   const [speciesQuery, setSpeciesQuery] = useState<string>('');
   const [selectedSpecies, setSelectedSpecies] = useState<string>('');
   const [isSpeciesMenuOpen, setIsSpeciesMenuOpen] = useState<boolean>(false);
   const [selectedGender, setSelectedGender] = useState<Gender>('male');
   const [nickname, setNickname] = useState<string>('');
+  const [selectedKeyDescriptor, setSelectedKeyDescriptor] = useState<string>(KEY_DESCRIPTORS[0]);
+  const [selectedKeyFamily, setSelectedKeyFamily] = useState<string>(KEY_FAMILY_OPTIONS[0].code);
 
   const filteredMonsters = useMemo(() => {
     const normalized = speciesQuery.trim().toLowerCase();
@@ -54,6 +63,13 @@ export const MonsterList: React.FC<MonsterListProps> = ({
     setSpeciesQuery('');
     setSelectedSpecies('');
     setIsSpeciesMenuOpen(false);
+  };
+
+  const handleAddKey = () => {
+    if (!selectedKeyDescriptor || !selectedKeyFamily) {
+      return;
+    }
+    onOwnedKeyAdd(selectedKeyDescriptor, selectedKeyFamily);
   };
 
   const sortOwned = useCallback((a: OwnedMonster, b: OwnedMonster) => {
@@ -96,7 +112,9 @@ export const MonsterList: React.FC<MonsterListProps> = ({
     return (
       <div key={owned.id} className={`tree-node monster state-${owned.gender}`}>
         <div className="tree-check">
-          <span>{displayName}</span>
+          <a href={`#monster/${owned.monsterId}`} className="monster-link">
+            {displayName}
+          </a>
           <span className={`stable-family-pill ${familyClass}`}>{familyName}</span>
           {owned.nickname.trim() && (
             <span className="tree-assigned-name">[{owned.nickname.trim()}]</span>
@@ -116,6 +134,15 @@ export const MonsterList: React.FC<MonsterListProps> = ({
       </div>
     );
   };
+
+  const availableFamiliesFromKeys = useMemo(() => {
+    const families = new Set<string>();
+    ownedKeys.forEach((ownedKey) => {
+      const option = KEY_FAMILY_BY_CODE.get(ownedKey.family);
+      (option?.availableFamilies || []).forEach((family) => families.add(family));
+    });
+    return Array.from(families).sort((a, b) => a.localeCompare(b));
+  }, [ownedKeys]);
 
   return (
     <div className="monster-list">
@@ -181,7 +208,16 @@ export const MonsterList: React.FC<MonsterListProps> = ({
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => handleSpeciesSelect(monster.id)}
                   >
-                    <span>{monster.name}</span>
+                    <span>
+                      {monster.name}{' '}
+                      <a
+                        href={`#monster/${monster.id}`}
+                        className="monster-link"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        (view)
+                      </a>
+                    </span>
                     <span className="combobox-meta">{monster.family}</span>
                   </button>
                 ))}
@@ -216,6 +252,89 @@ export const MonsterList: React.FC<MonsterListProps> = ({
             Add to Stable
           </button>
         </div>
+      </div>
+
+      <div className="stable-add-panel">
+        <h3>Key Reference</h3>
+        <div className="add-form-grid key-form-grid">
+          <select
+            value={selectedKeyDescriptor}
+            onChange={(e) => setSelectedKeyDescriptor(e.target.value)}
+            className="family-filter"
+          >
+            {KEY_DESCRIPTORS.map((descriptor) => (
+              <option key={descriptor} value={descriptor}>
+                {descriptor}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={selectedKeyFamily}
+            onChange={(e) => setSelectedKeyFamily(e.target.value)}
+            className="family-filter"
+          >
+            {KEY_FAMILY_OPTIONS.map((option) => (
+              <option key={option.code} value={option.code}>
+                {option.code} ({option.label})
+              </option>
+            ))}
+          </select>
+
+          <button
+            type="button"
+            className="add-stable-btn"
+            onClick={handleAddKey}
+          >
+            <Plus size={16} />
+            Add Key
+          </button>
+        </div>
+
+        <div className="keys-summary">
+          <p>
+            <strong>Families Available By Keys:</strong>{' '}
+            {availableFamiliesFromKeys.length > 0 ? availableFamiliesFromKeys.join(', ') : 'None'}
+          </p>
+        </div>
+
+        {ownedKeys.length > 0 && (
+          <div className="keys-grid">
+            {ownedKeys.map((ownedKey) => {
+              const option = KEY_FAMILY_BY_CODE.get(ownedKey.family);
+              const keyFamilies = option?.availableFamilies || [];
+              return (
+                <div key={ownedKey.id} className="key-card">
+                  <div className="key-card-main">
+                    <strong>{ownedKey.descriptor} {ownedKey.family}</strong>
+                    {keyFamilies.length > 0 ? (
+                      <div className="key-family-pills">
+                        {keyFamilies.map((family) => (
+                          <span
+                            key={`${ownedKey.id}-${family}`}
+                            className={`stable-family-pill family-${family.toLowerCase()}`}
+                          >
+                            {family}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="combobox-meta">Unknown</span>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    className="stable-remove"
+                    onClick={() => onOwnedKeyRemove(ownedKey.id)}
+                    title="Remove key"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

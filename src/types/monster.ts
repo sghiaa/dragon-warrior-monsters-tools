@@ -9,6 +9,16 @@ export interface Monster {
   defenseGrowth: number;
   agilityGrowth: number;
   intelligenceGrowth: number;
+  expGrowth?: number;
+  maxLevel?: number;
+  inStory?: boolean;
+  skills?: string[];
+  spawnLocations?: MonsterSpawnLocation[];
+}
+
+export interface MonsterSpawnLocation {
+  map: string;
+  description: string;
 }
 
 export interface BreedingPair {
@@ -36,6 +46,12 @@ export interface OwnedMonster {
   monsterId: string;
   gender: Gender;
   nickname: string;
+}
+
+export interface OwnedKey {
+  id: string;
+  descriptor: string;
+  family: string;
 }
 
 export interface BreedingPlan {

@@ -29,6 +29,12 @@ export const BreedingPlan: React.FC<BreedingPlanProps> = ({ plan, goalStateKey, 
     return monster ? monster.name : monsterId;
   };
 
+  const renderMonsterLink = (monsterId: string) => (
+    <a href={`#monster/${monsterId}`} className="monster-link">
+      {getMonsterName(monsterId)}
+    </a>
+  );
+
   const addCounts = (target: Record<string, number>, source: Record<string, number>) => {
     Object.entries(source).forEach(([family, count]) => {
       target[family] = (target[family] || 0) + count;
@@ -149,7 +155,7 @@ export const BreedingPlan: React.FC<BreedingPlanProps> = ({ plan, goalStateKey, 
       <div className="breeding-plan success">
         <div className="plan-header">
           <CheckCircle size={24} />
-          <h2>You already have {getMonsterName(plan.targetMonster)}!</h2>
+          <h2>You already have {renderMonsterLink(plan.targetMonster)}!</h2>
         </div>
         <p>No breeding needed - this monster is already in your collection.</p>
       </div>
@@ -272,7 +278,7 @@ export const BreedingPlan: React.FC<BreedingPlanProps> = ({ plan, goalStateKey, 
               checked={isChecked}
               onChange={() => toggleChecked(path, node)}
             />
-            <span>{node.kind === 'monster' ? getMonsterName(node.value) : node.value}</span>
+            <span>{node.kind === 'monster' ? renderMonsterLink(node.value) : node.value}</span>
             {customName?.trim() && (
               <span className="tree-assigned-name">[{customName.trim()}]</span>
             )}
@@ -321,7 +327,7 @@ export const BreedingPlan: React.FC<BreedingPlanProps> = ({ plan, goalStateKey, 
       <div className="breeding-plan impossible">
         <div className="plan-header">
           <XCircle size={24} />
-          <h2>Cannot breed {getMonsterName(plan.targetMonster)}</h2>
+          <h2>Cannot breed {renderMonsterLink(plan.targetMonster)}</h2>
         </div>
         <p>Based on your current monster collection, there's no direct path to breed this monster.</p>
 
@@ -343,12 +349,12 @@ export const BreedingPlan: React.FC<BreedingPlanProps> = ({ plan, goalStateKey, 
           <div className="suggestions">
             <h3>
               <AlertCircle size={20} />
-              You need these monsters to breed {getMonsterName(plan.targetMonster)}:
+              You need these monsters to breed {renderMonsterLink(plan.targetMonster)}:
             </h3>
             <ul>
               {plan.missingMonsters.map(monsterId => (
                 <li key={monsterId}>
-                  <strong>{getMonsterName(monsterId)}</strong>
+                  <strong>{renderMonsterLink(monsterId)}</strong>
                 </li>
               ))}
             </ul>
@@ -365,7 +371,7 @@ export const BreedingPlan: React.FC<BreedingPlanProps> = ({ plan, goalStateKey, 
     <div className="breeding-plan possible">
       <div className="plan-header">
         <CheckCircle size={24} />
-        <h2>Breeding Plan for {getMonsterName(plan.targetMonster)}</h2>
+        <h2>Breeding Plan for {renderMonsterLink(plan.targetMonster)}</h2>
       </div>
       
       {plan.tree && (

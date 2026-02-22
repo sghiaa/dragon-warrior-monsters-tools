@@ -22,14 +22,89 @@ const DEFAULT_STATS = {
   attackGrowth: 6,
   defenseGrowth: 6,
   agilityGrowth: 5,
-  intelligenceGrowth: 5
+  intelligenceGrowth: 5,
+  expGrowth: 10,
+  maxLevel: 40
 };
 
 // Cache for family data to avoid repeated network requests
 const familyCache: Record<string, string[]> = {};
+const monsterMetaByIdCache = new Map<string, Partial<Monster>>();
+
+const normalizeId = (value: string): string =>
+  value.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+
+const readNumberAttribute = (element: Element, name: string, fallback = 0): number => {
+  const raw = element.getAttribute(name);
+  if (raw == null) {
+    return fallback;
+  }
+  const parsed = Number(raw);
+  return Number.isNaN(parsed) ? fallback : parsed;
+};
+
+const loadMonsterMetaFromXml = async (): Promise<Map<string, Partial<Monster>>> => {
+  if (monsterMetaByIdCache.size > 0) {
+    return monsterMetaByIdCache;
+  }
+
+  try {
+    const response = await fetch('/data/monster-data.xml');
+    if (!response.ok) {
+      return monsterMetaByIdCache;
+    }
+
+    const xmlText = await response.text();
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(xmlText, 'application/xml');
+    if (xmlDoc.querySelector('parsererror')) {
+      console.error('Failed parsing /data/monster-data.xml');
+      return monsterMetaByIdCache;
+    }
+
+    const monsterElements = Array.from(xmlDoc.getElementsByTagName('monster'));
+    monsterElements.forEach((monsterElement) => {
+      const monsterName = monsterElement.getAttribute('name') || '';
+      const id = normalizeId(monsterName);
+      if (!id) {
+        return;
+      }
+
+      const growth = monsterElement.getElementsByTagName('growth')[0];
+      const spawnLocationEls = Array.from(monsterElement.getElementsByTagName('location'));
+      const skills = Array.from(monsterElement.getElementsByTagName('skill'))
+        .map((skillEl) => (skillEl.textContent || '').trim())
+        .filter((skill) => skill.length > 0);
+
+      monsterMetaByIdCache.set(id, {
+        inStory: monsterElement.getAttribute('in_story') === 'true',
+        skills,
+        spawnLocations: spawnLocationEls.map((locationEl) => ({
+          map: (locationEl.getElementsByTagName('map')[0]?.textContent || '').trim(),
+          description: (locationEl.getElementsByTagName('description')[0]?.textContent || '').trim()
+        })),
+        ...(growth ? {
+          hpGrowth: readNumberAttribute(growth, 'hp', DEFAULT_STATS.hpGrowth),
+          mpGrowth: readNumberAttribute(growth, 'mp', DEFAULT_STATS.mpGrowth),
+          attackGrowth: readNumberAttribute(growth, 'atk', DEFAULT_STATS.attackGrowth),
+          defenseGrowth: readNumberAttribute(growth, 'def', DEFAULT_STATS.defenseGrowth),
+          agilityGrowth: readNumberAttribute(growth, 'agl', DEFAULT_STATS.agilityGrowth),
+          intelligenceGrowth: readNumberAttribute(growth, 'int', DEFAULT_STATS.intelligenceGrowth),
+          expGrowth: readNumberAttribute(growth, 'exp', DEFAULT_STATS.expGrowth),
+          maxLevel: readNumberAttribute(growth, 'maxlvl', DEFAULT_STATS.maxLevel)
+        } : {})
+      });
+    });
+  } catch (error) {
+    console.error('Error loading monster-data.xml:', error);
+  }
+
+  return monsterMetaByIdCache;
+};
 
 export const loadMonstersFromCSV = async (): Promise<Monster[]> => {
   const monsters: Monster[] = [];
+  const monsterMetaById = await loadMonsterMetaFromXml();
   
   // Get all family CSV files
   const familyFiles = Object.keys(FAMILY_MAPPING);
@@ -50,7 +125,7 @@ export const loadMonstersFromCSV = async (): Promise<Monster[]> => {
       monsterNames.forEach((name, index) => {
         if (name) {
           // Generate ID from name (lowercase, replace spaces with underscores)
-          const id = name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+          const id = normalizeId(name);
           
           // Assign rank based on position in file (1-8 scale)
           const rank = Math.max(1, Math.min(8, Math.ceil((index + 1) / (monsterNames.length / 8))));
@@ -60,7 +135,8 @@ export const loadMonstersFromCSV = async (): Promise<Monster[]> => {
             name,
             family,
             rank,
-            ...DEFAULT_STATS
+            ...DEFAULT_STATS,
+            ...(monsterMetaById.get(id) || {})
           });
         }
       });
