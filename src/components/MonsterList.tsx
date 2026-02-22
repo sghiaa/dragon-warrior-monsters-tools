@@ -34,6 +34,7 @@ export const MonsterList: React.FC<MonsterListProps> = ({
   const [nickname, setNickname] = useState<string>('');
   const [selectedKeyDescriptor, setSelectedKeyDescriptor] = useState<string>(KEY_DESCRIPTORS[0]);
   const [selectedKeyFamily, setSelectedKeyFamily] = useState<string>(KEY_FAMILY_OPTIONS[0].code);
+  const [selectedKeyFamilyHighlight, setSelectedKeyFamilyHighlight] = useState<string | null>(null);
 
   const filteredMonsters = useMemo(() => {
     const normalized = speciesQuery.trim().toLowerCase();
@@ -346,6 +347,33 @@ export const MonsterList: React.FC<MonsterListProps> = ({
             <strong>Families Available By Keys:</strong>{' '}
             {availableFamiliesFromKeys.length > 0 ? availableFamiliesFromKeys.join(', ') : 'None'}
           </p>
+          {availableFamiliesFromKeys.length > 0 && (
+            <div className="key-family-filter-pills">
+              {availableFamiliesFromKeys.map((family) => {
+                const isActive = selectedKeyFamilyHighlight === family;
+                return (
+                  <button
+                    key={family}
+                    type="button"
+                    className={`stable-family-pill family-${family.toLowerCase()} ${isActive ? 'active' : ''}`}
+                    onClick={() => setSelectedKeyFamilyHighlight((prev) => (prev === family ? null : family))}
+                    title={`Highlight keys containing ${family}`}
+                  >
+                    {family}
+                  </button>
+                );
+              })}
+              {selectedKeyFamilyHighlight && (
+                <button
+                  type="button"
+                  className="clear-key-filter-btn"
+                  onClick={() => setSelectedKeyFamilyHighlight(null)}
+                >
+                  Clear filter
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {ownedKeys.length > 0 && (
@@ -353,8 +381,12 @@ export const MonsterList: React.FC<MonsterListProps> = ({
             {ownedKeys.map((ownedKey) => {
               const option = KEY_FAMILY_BY_CODE.get(ownedKey.family);
               const keyFamilies = option?.availableFamilies || [];
+              const isHighlighted = !selectedKeyFamilyHighlight || keyFamilies.includes(selectedKeyFamilyHighlight);
               return (
-                <div key={ownedKey.id} className="key-card">
+                <div
+                  key={ownedKey.id}
+                  className={`key-card ${selectedKeyFamilyHighlight ? (isHighlighted ? 'highlighted' : 'dimmed') : ''}`}
+                >
                   <div className="key-card-main">
                     <strong>{ownedKey.descriptor} {ownedKey.family}</strong>
                     {keyFamilies.length > 0 ? (

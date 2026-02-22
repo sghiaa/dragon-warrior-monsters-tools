@@ -295,6 +295,37 @@ body {
   color: #3b4f73;
 }
 
+.key-family-filter-pills {
+  margin-top: 0.55rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.key-family-filter-pills .stable-family-pill {
+  cursor: pointer;
+}
+
+.key-family-filter-pills .stable-family-pill.active {
+  box-shadow: 0 0 0 2px rgba(47, 78, 126, 0.25);
+}
+
+.clear-key-filter-btn {
+  border: 1px solid #c8d2e8;
+  background: #ffffff;
+  color: #35507f;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.clear-key-filter-btn:hover {
+  background: #f2f7ff;
+}
+
 .keys-grid {
   margin-top: 0.8rem;
   display: grid;
@@ -311,6 +342,15 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: 0.6rem;
+}
+
+.key-card.highlighted {
+  border-color: #7fa4e9;
+  background: #f2f7ff;
+}
+
+.key-card.dimmed {
+  opacity: 0.45;
 }
 
 .story-key-card {

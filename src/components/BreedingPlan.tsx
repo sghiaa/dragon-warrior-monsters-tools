@@ -84,7 +84,9 @@ export const BreedingPlan: React.FC<BreedingPlanProps> = ({ plan, goalStateKey, 
   }, [plan.tree, checkedNodes]);
 
   const adjustedRemaining = useMemo(() => {
-    const baseRemaining = { ...(plan.remainingRequirements || {}) };
+    // Use full base requirements as the baseline so visible unchecked tree
+    // requirements are reflected even when remainingRequirements has collapsed to zero.
+    const baseRemaining = { ...(plan.baseRequirements || plan.remainingRequirements || {}) };
     Object.entries(checkedCoverage).forEach(([family, covered]) => {
       baseRemaining[family] = Math.max(0, (baseRemaining[family] || 0) - covered);
       if (baseRemaining[family] === 0) {
@@ -92,7 +94,7 @@ export const BreedingPlan: React.FC<BreedingPlanProps> = ({ plan, goalStateKey, 
       }
     });
     return baseRemaining;
-  }, [plan.remainingRequirements, checkedCoverage]);
+  }, [plan.baseRequirements, plan.remainingRequirements, checkedCoverage]);
 
   const adjustedRemainingTotal = useMemo(() => {
     return Object.values(adjustedRemaining).reduce((sum, count) => sum + count, 0);
