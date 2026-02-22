@@ -6,6 +6,7 @@ export interface StorageData {
   userMonsters: UserMonster[];
   ownedMonsters: OwnedMonster[];
   ownedKeys: OwnedKey[];
+  ownedStoryKeyWorlds: string[];
   plannerProgressByGoal: Record<string, PlannerProgressState>;
   uiState?: UiState;
   lastUpdated: string;
@@ -39,6 +40,7 @@ const loadStorageData = (): StorageData | null => {
       userMonsters: data.userMonsters || [],
       ownedMonsters: data.ownedMonsters || [],
       ownedKeys: data.ownedKeys || [],
+      ownedStoryKeyWorlds: data.ownedStoryKeyWorlds || [],
       plannerProgressByGoal: data.plannerProgressByGoal || {},
       uiState: data.uiState || {},
       lastUpdated: data.lastUpdated || new Date().toISOString()
@@ -59,6 +61,7 @@ export const loadFromStorage = (): StorageData => {
     userMonsters: [],
     ownedMonsters: [],
     ownedKeys: [],
+    ownedStoryKeyWorlds: [],
     plannerProgressByGoal: {},
     lastUpdated: new Date().toISOString()
   };
@@ -67,7 +70,8 @@ export const loadFromStorage = (): StorageData => {
 export const saveToStorage = (
   userMonsters: UserMonster[],
   ownedMonsters: OwnedMonster[],
-  ownedKeys: OwnedKey[]
+  ownedKeys: OwnedKey[],
+  ownedStoryKeyWorlds: string[]
 ): void => {
   try {
     const existing = loadStorageData();
@@ -75,6 +79,7 @@ export const saveToStorage = (
       userMonsters,
       ownedMonsters,
       ownedKeys,
+      ownedStoryKeyWorlds,
       plannerProgressByGoal: existing?.plannerProgressByGoal || {},
       uiState: existing?.uiState || {},
       lastUpdated: new Date().toISOString()

@@ -313,6 +313,17 @@ body {
   gap: 0.6rem;
 }
 
+.story-key-card {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.story-key-card.active {
+  border-color: #7fa4e9;
+  background: #f2f7ff;
+}
+
 .key-card-main {
   display: flex;
   flex-direction: column;

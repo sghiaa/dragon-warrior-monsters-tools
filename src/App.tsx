@@ -15,6 +15,7 @@ import './App.css';
 function App() {
   const [ownedMonsters, setOwnedMonsters] = useState<OwnedMonster[]>([]);
   const [ownedKeys, setOwnedKeys] = useState<OwnedKey[]>([]);
+  const [ownedStoryKeyWorlds, setOwnedStoryKeyWorlds] = useState<string[]>([]);
   const [hasHydratedStorage, setHasHydratedStorage] = useState(false);
   const [activeTab, setActiveTab] = useState<'collection' | 'possibilities' | 'planner' | 'unlimited'>('collection');
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
@@ -110,6 +111,7 @@ function App() {
       setOwnedMonsters(migratedOwned);
     }
     setOwnedKeys(storedData.ownedKeys || []);
+    setOwnedStoryKeyWorlds(storedData.ownedStoryKeyWorlds || []);
     const uiState = loadUiState();
     if (uiState.activeTab) {
       setActiveTab(uiState.activeTab);
@@ -129,8 +131,8 @@ function App() {
     if (!hasHydratedStorage) {
       return;
     }
-    saveToStorage(userMonsters, ownedMonsters, ownedKeys);
-  }, [hasHydratedStorage, userMonsters, ownedMonsters, ownedKeys]);
+    saveToStorage(userMonsters, ownedMonsters, ownedKeys, ownedStoryKeyWorlds);
+  }, [hasHydratedStorage, userMonsters, ownedMonsters, ownedKeys, ownedStoryKeyWorlds]);
 
   useEffect(() => {
     if (!hasHydratedStorage) {
@@ -188,6 +190,14 @@ function App() {
 
   const handleOwnedKeyRemove = (ownedKeyId: string) => {
     setOwnedKeys((prev) => prev.filter((key) => key.id !== ownedKeyId));
+  };
+
+  const handleToggleOwnedStoryKeyWorld = (worldName: string) => {
+    setOwnedStoryKeyWorlds((prev) => (
+      prev.includes(worldName)
+        ? prev.filter((name) => name !== worldName)
+        : [...prev, worldName]
+    ));
   };
 
   const handleGoalChange = (monsterIds: string[]) => {
@@ -263,11 +273,13 @@ function App() {
                   <MonsterList
                     ownedMonsters={ownedMonsters}
                     ownedKeys={ownedKeys}
+                    ownedStoryKeyWorlds={ownedStoryKeyWorlds}
                     monsterStepCounts={stableStepCounts}
                     onOwnedMonsterAdd={handleOwnedMonsterAdd}
                     onOwnedMonsterRemove={handleOwnedMonsterRemove}
                     onOwnedKeyAdd={handleOwnedKeyAdd}
                     onOwnedKeyRemove={handleOwnedKeyRemove}
+                    onToggleOwnedStoryKeyWorld={handleToggleOwnedStoryKeyWorld}
                   />
                 )}
 

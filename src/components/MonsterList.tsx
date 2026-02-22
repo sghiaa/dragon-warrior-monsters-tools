@@ -7,21 +7,25 @@ import { Plus, Trash2 } from 'lucide-react';
 interface MonsterListProps {
   ownedMonsters: OwnedMonster[];
   ownedKeys: OwnedKey[];
+  ownedStoryKeyWorlds: string[];
   monsterStepCounts: Record<string, number>;
   onOwnedMonsterAdd: (monsterId: string, gender: Gender, nickname: string) => void;
   onOwnedMonsterRemove: (ownedMonsterId: string) => void;
   onOwnedKeyAdd: (descriptor: string, family: string) => void;
   onOwnedKeyRemove: (ownedKeyId: string) => void;
+  onToggleOwnedStoryKeyWorld: (worldName: string) => void;
 }
 
 export const MonsterList: React.FC<MonsterListProps> = ({
   ownedMonsters,
   ownedKeys,
+  ownedStoryKeyWorlds,
   monsterStepCounts,
   onOwnedMonsterAdd,
   onOwnedMonsterRemove,
   onOwnedKeyAdd,
-  onOwnedKeyRemove
+  onOwnedKeyRemove,
+  onToggleOwnedStoryKeyWorld
 }) => {
   const [speciesQuery, setSpeciesQuery] = useState<string>('');
   const [selectedSpecies, setSelectedSpecies] = useState<string>('');
@@ -135,14 +139,60 @@ export const MonsterList: React.FC<MonsterListProps> = ({
     );
   };
 
+  const storyKeyWorlds = useMemo(() => {
+    const storyWorldOrder: Record<string, number> = {
+      oasis: 1,
+      pirate: 2,
+      ice: 3,
+      sky: 4,
+      limbo: 5,
+      elf: 6,
+      lonely: 6,
+      traveller: 8,
+      traveler: 8
+    };
+    const normalizeWorldKey = (worldName: string) =>
+      worldName.toLowerCase().replace(/\s*key world\s*$/i, '').trim();
+
+    const byWorld = new Map<string, Set<string>>();
+    MONSTERS.forEach((monster) => {
+      (monster.spawnLocations || []).forEach((location) => {
+        const map = (location.map || '').trim();
+        if (!/key world/i.test(map)) {
+          return;
+        }
+        const set = byWorld.get(map) || new Set<string>();
+        set.add(monster.family);
+        byWorld.set(map, set);
+      });
+    });
+
+    return Array.from(byWorld.entries())
+      .map(([worldName, familiesSet]) => ({
+        worldName,
+        families: Array.from(familiesSet).sort((a, b) => a.localeCompare(b))
+      }))
+      .sort((a, b) => {
+        const aOrder = storyWorldOrder[normalizeWorldKey(a.worldName)] ?? Number.MAX_SAFE_INTEGER;
+        const bOrder = storyWorldOrder[normalizeWorldKey(b.worldName)] ?? Number.MAX_SAFE_INTEGER;
+        if (aOrder !== bOrder) {
+          return aOrder - bOrder;
+        }
+        return a.worldName.localeCompare(b.worldName);
+      });
+  }, []);
+
   const availableFamiliesFromKeys = useMemo(() => {
     const families = new Set<string>();
     ownedKeys.forEach((ownedKey) => {
       const option = KEY_FAMILY_BY_CODE.get(ownedKey.family);
       (option?.availableFamilies || []).forEach((family) => families.add(family));
     });
+    storyKeyWorlds
+      .filter((world) => ownedStoryKeyWorlds.includes(world.worldName))
+      .forEach((world) => world.families.forEach((family) => families.add(family)));
     return Array.from(families).sort((a, b) => a.localeCompare(b));
-  }, [ownedKeys]);
+  }, [ownedKeys, ownedStoryKeyWorlds, storyKeyWorlds]);
 
   return (
     <div className="monster-list">
@@ -331,6 +381,45 @@ export const MonsterList: React.FC<MonsterListProps> = ({
                     <Trash2 size={14} />
                   </button>
                 </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <div className="stable-add-panel">
+        <h3>Story Keys</h3>
+        <p className="tree-help">Select story key worlds you have to include their available families.</p>
+        {storyKeyWorlds.length === 0 ? (
+          <p className="tree-help">No key world spawn data found.</p>
+        ) : (
+          <div className="keys-grid">
+            {storyKeyWorlds.map((world) => {
+              const isOwned = ownedStoryKeyWorlds.includes(world.worldName);
+              return (
+                <button
+                  key={world.worldName}
+                  type="button"
+                  className={`key-card story-key-card ${isOwned ? 'active' : ''}`}
+                  onClick={() => onToggleOwnedStoryKeyWorld(world.worldName)}
+                >
+                  <div className="key-card-main">
+                    <strong>{world.worldName}</strong>
+                    {isOwned && (
+                      <div className="key-family-pills">
+                        {world.families.map((family) => (
+                          <span
+                            key={`${world.worldName}-${family}`}
+                            className={`stable-family-pill family-${family.toLowerCase()}`}
+                          >
+                            {family}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <span className="stable-gender-pill">{isOwned ? 'Owned' : 'Not Owned'}</span>
+                </button>
               );
             })}
           </div>
