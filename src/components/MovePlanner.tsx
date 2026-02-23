@@ -59,6 +59,18 @@ export const MovePlanner: React.FC<MovePlannerProps> = ({ userMonsters, stableSt
     }
     return getMonstersWithMove(selectedMove, MONSTERS, stableStepCounts);
   }, [selectedMove, isDirectMove, stableStepCounts]);
+  const selectedMoveRequirements = selectedRecipe?.requirements;
+  const requirementParts = selectedMoveRequirements
+    ? [
+        `Lvl ${selectedMoveRequirements.level}`,
+        `HP ${selectedMoveRequirements.hp}`,
+        `MP ${selectedMoveRequirements.mp}`,
+        `ATK ${selectedMoveRequirements.attack}`,
+        `DEF ${selectedMoveRequirements.defense}`,
+        `AGL ${selectedMoveRequirements.agility}`,
+        `INT ${selectedMoveRequirements.intelligence}`
+      ]
+    : [];
 
   const pathfinder = useMemo(() => new BreedingPathfinder(userMonsters), [userMonsters]);
   const monsterPlans = useMemo(() => {
@@ -129,6 +141,11 @@ export const MovePlanner: React.FC<MovePlannerProps> = ({ userMonsters, stableSt
       {selectedMove && isDirectMove && (
         <div className="stable-add-panel">
           <h3>Monsters That Learn {selectedMove}</h3>
+          {requirementParts.length > 0 && (
+            <p>
+              <strong>Requirements:</strong> {requirementParts.join(', ')}
+            </p>
+          )}
           {directMoveLearners.length === 0 ? (
             <p className="tree-help">No monsters in the loaded dataset have this move listed.</p>
           ) : (
@@ -155,6 +172,11 @@ export const MovePlanner: React.FC<MovePlannerProps> = ({ userMonsters, stableSt
       {selectedMove && movePlan && !isDirectMove && (
         <div className="stable-add-panel">
           <h3>Suggested Path for {selectedMove}</h3>
+          {requirementParts.length > 0 && (
+            <p>
+              <strong>Requirements:</strong> {requirementParts.join(', ')}
+            </p>
+          )}
           <p>
             <strong>Required moves:</strong>{' '}
             {movePlan.requiredSkills.length > 0 ? movePlan.requiredSkills.join(', ') : 'None'}

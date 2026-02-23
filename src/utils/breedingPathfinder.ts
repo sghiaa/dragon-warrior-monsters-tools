@@ -18,6 +18,7 @@ type PlanNode =
 interface PlanWithCost {
   node: PlanNode;
   cost: number;
+  remainingCost: number;
   ownedPreference: number;
 }
 
@@ -190,6 +191,7 @@ export class BreedingPathfinder {
       best = {
         node: { type: 'monster', id: monsterId, seeded: true },
         cost: 0,
+        remainingCost: 0,
         ownedPreference: 1000
       };
     }
@@ -221,16 +223,23 @@ export class BreedingPathfinder {
           parent2: right.node
         },
         cost: left.cost + right.cost + 1,
+        remainingCost: 0,
         ownedPreference:
           left.ownedPreference +
           right.ownedPreference +
           ((this.ownedByMonster.get(monsterId) || 0) > 0 ? 10 : 0)
       };
+      current.remainingCost = this.sumRequirements(this.collectRemainingRequirements(current.node));
 
       if (
         !best ||
         current.cost < best.cost ||
-        (current.cost === best.cost && current.ownedPreference > best.ownedPreference)
+        (current.cost === best.cost && current.remainingCost < best.remainingCost) ||
+        (
+          current.cost === best.cost &&
+          current.remainingCost === best.remainingCost &&
+          current.ownedPreference > best.ownedPreference
+        )
       ) {
         best = current;
       }
@@ -263,6 +272,7 @@ export class BreedingPathfinder {
     return {
       node: { type: 'family', family: parent.family },
       cost: 0,
+      remainingCost: 1,
       ownedPreference: (this.ownedByFamily.get(parent.family) || 0) > 0 ? 1 : 0
     };
   }

@@ -86,6 +86,102 @@ jest.mock('../data/monsters', () => {
       defenseGrowth: 1,
       agilityGrowth: 1,
       intelligenceGrowth: 1
+    },
+    {
+      id: 'owned_beast',
+      name: 'OwnedBeast',
+      family: 'Beast',
+      rank: 1,
+      hpGrowth: 1,
+      mpGrowth: 1,
+      attackGrowth: 1,
+      defenseGrowth: 1,
+      agilityGrowth: 1,
+      intelligenceGrowth: 1
+    },
+    {
+      id: 'owned_devil',
+      name: 'OwnedDevil',
+      family: 'Devil',
+      rank: 1,
+      hpGrowth: 1,
+      mpGrowth: 1,
+      attackGrowth: 1,
+      defenseGrowth: 1,
+      agilityGrowth: 1,
+      intelligenceGrowth: 1
+    },
+    {
+      id: 'owned_dragon',
+      name: 'OwnedDragon',
+      family: 'Dragon',
+      rank: 1,
+      hpGrowth: 1,
+      mpGrowth: 1,
+      attackGrowth: 1,
+      defenseGrowth: 1,
+      agilityGrowth: 1,
+      intelligenceGrowth: 1
+    },
+    {
+      id: 'a1',
+      name: 'A1',
+      family: 'Beast',
+      rank: 1,
+      hpGrowth: 1,
+      mpGrowth: 1,
+      attackGrowth: 1,
+      defenseGrowth: 1,
+      agilityGrowth: 1,
+      intelligenceGrowth: 1
+    },
+    {
+      id: 'a2',
+      name: 'A2',
+      family: 'Beast',
+      rank: 1,
+      hpGrowth: 1,
+      mpGrowth: 1,
+      attackGrowth: 1,
+      defenseGrowth: 1,
+      agilityGrowth: 1,
+      intelligenceGrowth: 1
+    },
+    {
+      id: 'b1',
+      name: 'B1',
+      family: 'Devil',
+      rank: 1,
+      hpGrowth: 1,
+      mpGrowth: 1,
+      attackGrowth: 1,
+      defenseGrowth: 1,
+      agilityGrowth: 1,
+      intelligenceGrowth: 1
+    },
+    {
+      id: 'b2',
+      name: 'B2',
+      family: 'Dragon',
+      rank: 1,
+      hpGrowth: 1,
+      mpGrowth: 1,
+      attackGrowth: 1,
+      defenseGrowth: 1,
+      agilityGrowth: 1,
+      intelligenceGrowth: 1
+    },
+    {
+      id: 'choicemonster',
+      name: 'ChoiceMonster',
+      family: 'Boss',
+      rank: 1,
+      hpGrowth: 1,
+      mpGrowth: 1,
+      attackGrowth: 1,
+      defenseGrowth: 1,
+      agilityGrowth: 1,
+      intelligenceGrowth: 1
     }
   ];
 
@@ -96,6 +192,12 @@ jest.mock('../data/monsters', () => {
     { result: 'Unicorn', parent1: 'Any Beast', parent2: 'Any Slime' },
     { result: 'Chimera', parent1: 'Grizzly', parent2: 'Any Slime' },
     { result: 'Chimera', parent1: 'Saberman', parent2: 'Any Slime' },
+    { result: 'A1', parent1: 'Any Beast', parent2: 'Any Beast' },
+    { result: 'A2', parent1: 'Any Beast', parent2: 'Any Slime' },
+    { result: 'B1', parent1: 'Any Devil', parent2: 'Any Slime' },
+    { result: 'B2', parent1: 'Any Dragon', parent2: 'Any Slime' },
+    { result: 'ChoiceMonster', parent1: 'A1', parent2: 'A2' },
+    { result: 'ChoiceMonster', parent1: 'B1', parent2: 'B2' },
     { result: 'Dracolord1', parent1: 'Any Slime', parent2: 'Any Dragon' },
     { result: 'Darkhorn', parent1: 'Any Boss', parent2: 'Any Beast' }
   ];
@@ -181,5 +283,22 @@ describe('BreedingPathfinder', () => {
 
     expect(plan.isPossible).toBe(false);
     expect(plan.missingRequirements).toEqual(['Goal monster does not exist in loaded data.']);
+  });
+
+  it('prefers the equal-step recipe with fewer remaining requirements', () => {
+    const pathfinder = new BreedingPathfinder([
+      { monsterId: 'owned_beast', count: 1, maleCount: 1, femaleCount: 0 },
+      { monsterId: 'owned_devil', count: 1, maleCount: 1, femaleCount: 0 },
+      { monsterId: 'owned_dragon', count: 1, maleCount: 1, femaleCount: 0 }
+    ]);
+    const plan = pathfinder.findBreedingPath('choicemonster');
+
+    expect(plan.isPossible).toBe(true);
+    expect(plan.steps.length).toBe(3);
+    expect(plan.steps[2]).toMatchObject({
+      parent1: 'b1',
+      parent2: 'b2',
+      result: 'choicemonster'
+    });
   });
 });

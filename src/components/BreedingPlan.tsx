@@ -102,6 +102,85 @@ export const BreedingPlan: React.FC<BreedingPlanProps> = ({ plan, goalStateKey, 
     return Object.values(adjustedRemaining).reduce((sum, count) => sum + count, 0);
   }, [adjustedRemaining]);
 
+  const remainingGenderRequirementsByFamily = useMemo(() => {
+    if (!plan.tree) {
+      return {} as Record<string, { total: number; male: number; female: number; unassigned: number }>;
+    }
+
+    const counts: Record<string, { total: number; male: number; female: number; unassigned: number }> = {};
+    const walk = (node: BreedingTreeNode, path: string): void => {
+      if (checkedNodes.has(path)) {
+        return;
+      }
+
+      if (node.kind === 'family') {
+        const family = node.value.replace(/^Any\s+/i, '');
+        if (!counts[family]) {
+          counts[family] = { total: 0, male: 0, female: 0, unassigned: 0 };
+        }
+        counts[family].total += 1;
+
+        const requiredGender = checkedNodeGenders[path];
+        if (requiredGender === 'male') {
+          counts[family].male += 1;
+        } else if (requiredGender === 'female') {
+          counts[family].female += 1;
+        } else {
+          counts[family].unassigned += 1;
+        }
+        return;
+      }
+
+      if (node.left) {
+        walk(node.left, `${path}.L`);
+      }
+      if (node.right) {
+        walk(node.right, `${path}.R`);
+      }
+    };
+
+    walk(plan.tree, 'root');
+    return counts;
+  }, [plan.tree, checkedNodes, checkedNodeGenders]);
+
+  const renderFamilyGenderRequirements = (
+    byFamily: Record<string, { total: number; male: number; female: number; unassigned: number }>
+  ) => {
+    const families = Object.keys(byFamily).sort((a, b) => a.localeCompare(b));
+    if (families.length === 0) {
+      return 'None';
+    }
+
+    return families.map((family) => {
+      const counts = byFamily[family];
+      const detailParts: string[] = [];
+      if (counts.male > 0) {
+        detailParts.push(`${counts.male} male`);
+      }
+      if (counts.female > 0) {
+        detailParts.push(`${counts.female} female`);
+      }
+      if (counts.unassigned > 0) {
+        detailParts.push(`${counts.unassigned} unassigned`);
+      }
+      const details = detailParts.join(', ');
+      return `${counts.total} ${family}${details ? ` (${details})` : ''}`;
+    }).join(', ');
+  };
+
+  const combinedRemainingByFamilyGender = useMemo(() => {
+    const hasTreeBreakdown = Object.keys(remainingGenderRequirementsByFamily).length > 0;
+    if (hasTreeBreakdown) {
+      return remainingGenderRequirementsByFamily;
+    }
+
+    const fallback: Record<string, { total: number; male: number; female: number; unassigned: number }> = {};
+    Object.entries(adjustedRemaining).forEach(([family, count]) => {
+      fallback[family] = { total: count, male: 0, female: 0, unassigned: count };
+    });
+    return fallback;
+  }, [remainingGenderRequirementsByFamily, adjustedRemaining]);
+
   useEffect(() => {
     const saved = loadPlannerProgress(goalStateKey);
     if (!saved) {
@@ -425,7 +504,8 @@ export const BreedingPlan: React.FC<BreedingPlanProps> = ({ plan, goalStateKey, 
           <strong>Base requirements:</strong> {renderRequirements(plan.baseRequirements)}
         </p>
         <p>
-          <strong>Remaining after owned + checked nodes:</strong> {adjustedRemainingTotal} ({renderRequirements(adjustedRemaining)})
+          <strong>Remaining after owned + checked nodes:</strong>{' '}
+          {adjustedRemainingTotal} ({renderFamilyGenderRequirements(combinedRemainingByFamilyGender)})
         </p>
         <p>
           <strong>Boss rule:</strong> Any generic Boss requirement is expanded as Dracolord1.

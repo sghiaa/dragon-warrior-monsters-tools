@@ -59,7 +59,9 @@ describe('BreedingPlan remaining summary', () => {
     );
 
     const remainingLine = getRemainingLine();
-    expect(remainingLine).toHaveTextContent('Remaining after owned + checked nodes: 3 (2 Beast, 1 Slime)');
+    expect(remainingLine).toHaveTextContent(
+      'Remaining after owned + checked nodes: 3 (2 Beast (2 unassigned), 1 Slime (1 unassigned))'
+    );
   });
 
   it('subtracts checked coverage from base requirements even when remainingRequirements is empty', () => {
@@ -85,7 +87,9 @@ describe('BreedingPlan remaining summary', () => {
     );
 
     const remainingLine = getRemainingLine();
-    expect(remainingLine).toHaveTextContent('Remaining after owned + checked nodes: 1 (1 Slime)');
+    expect(remainingLine).toHaveTextContent(
+      'Remaining after owned + checked nodes: 1 (1 Slime (1 unassigned))'
+    );
   });
 });
 
