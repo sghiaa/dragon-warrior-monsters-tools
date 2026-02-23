@@ -1,15 +1,15 @@
 {
   "files": {
     "main.css": "/dragon-warrior-monsters-tools/static/css/main.17760447.css",
-    "main.js": "/dragon-warrior-monsters-tools/static/js/main.40232602.js",
+    "main.js": "/dragon-warrior-monsters-tools/static/js/main.4a1c03cd.js",
     "static/js/453.cbadd072.chunk.js": "/dragon-warrior-monsters-tools/static/js/453.cbadd072.chunk.js",
     "index.html": "/dragon-warrior-monsters-tools/index.html",
     "main.17760447.css.map": "/dragon-warrior-monsters-tools/static/css/main.17760447.css.map",
-    "main.40232602.js.map": "/dragon-warrior-monsters-tools/static/js/main.40232602.js.map",
+    "main.4a1c03cd.js.map": "/dragon-warrior-monsters-tools/static/js/main.4a1c03cd.js.map",
     "453.cbadd072.chunk.js.map": "/dragon-warrior-monsters-tools/static/js/453.cbadd072.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.17760447.css",
-    "static/js/main.40232602.js"
+    "static/js/main.4a1c03cd.js"
   ]
 }
