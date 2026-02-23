@@ -18,6 +18,7 @@ type PlanNode =
 interface PlanWithCost {
   node: PlanNode;
   cost: number;
+  ownedPreference: number;
 }
 
 interface BreedingPathfinderOptions {
@@ -57,6 +58,7 @@ export class BreedingPathfinder {
   private recipesByResult: Map<string, Recipe[]> = new Map();
   private monsterFamilyById: Map<string, string> = new Map();
   private ownedByMonster: Map<string, number> = new Map();
+  private ownedByFamily: Map<string, number> = new Map();
   private seedMonsterIds: Set<string> = new Set();
   private seedFamilies: Set<string> = new Set();
   private hasSeedConstraints: boolean = false;
@@ -82,6 +84,10 @@ export class BreedingPathfinder {
     userMonsters.forEach((um) => {
       if (um.count > 0) {
         this.ownedByMonster.set(um.monsterId, um.count);
+        const family = this.monsterFamilyById.get(um.monsterId);
+        if (family) {
+          this.ownedByFamily.set(family, (this.ownedByFamily.get(family) || 0) + um.count);
+        }
       }
     });
 
@@ -183,7 +189,8 @@ export class BreedingPathfinder {
     if (this.seedMonsterIds.has(monsterId)) {
       best = {
         node: { type: 'monster', id: monsterId, seeded: true },
-        cost: 0
+        cost: 0,
+        ownedPreference: 1000
       };
     }
 
@@ -213,10 +220,18 @@ export class BreedingPathfinder {
           parent1: left.node,
           parent2: right.node
         },
-        cost: left.cost + right.cost + 1
+        cost: left.cost + right.cost + 1,
+        ownedPreference:
+          left.ownedPreference +
+          right.ownedPreference +
+          ((this.ownedByMonster.get(monsterId) || 0) > 0 ? 10 : 0)
       };
 
-      if (!best || current.cost < best.cost) {
+      if (
+        !best ||
+        current.cost < best.cost ||
+        (current.cost === best.cost && current.ownedPreference > best.ownedPreference)
+      ) {
         best = current;
       }
     }
@@ -247,7 +262,8 @@ export class BreedingPathfinder {
 
     return {
       node: { type: 'family', family: parent.family },
-      cost: 0
+      cost: 0,
+      ownedPreference: (this.ownedByFamily.get(parent.family) || 0) > 0 ? 1 : 0
     };
   }
 

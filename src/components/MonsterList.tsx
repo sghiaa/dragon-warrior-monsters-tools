@@ -1,13 +1,17 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Gender, OwnedKey, OwnedMonster } from '../types/monster';
+import { BreedingPlan, Gender, OwnedKey, OwnedMonster } from '../types/monster';
 import { MONSTERS, getMonsterById } from '../data/monsters';
 import { KEY_DESCRIPTORS, KEY_FAMILY_BY_CODE, KEY_FAMILY_OPTIONS } from '../data/keys';
+import { loadPlannerProgress } from '../utils/storage';
 import { Plus, Trash2 } from 'lucide-react';
 
 interface MonsterListProps {
   ownedMonsters: OwnedMonster[];
   ownedKeys: OwnedKey[];
   ownedStoryKeyWorlds: string[];
+  selectedGoals: string[];
+  breedingPlans: Record<string, BreedingPlan>;
+  plannerSeedMonsterIds: string[] | null;
   monsterStepCounts: Record<string, number>;
   onOwnedMonsterAdd: (monsterId: string, gender: Gender, nickname: string) => void;
   onOwnedMonsterRemove: (ownedMonsterId: string) => void;
@@ -20,6 +24,9 @@ export const MonsterList: React.FC<MonsterListProps> = ({
   ownedMonsters,
   ownedKeys,
   ownedStoryKeyWorlds,
+  selectedGoals,
+  breedingPlans,
+  plannerSeedMonsterIds,
   monsterStepCounts,
   onOwnedMonsterAdd,
   onOwnedMonsterRemove,
@@ -194,6 +201,114 @@ export const MonsterList: React.FC<MonsterListProps> = ({
       .forEach((world) => world.families.forEach((family) => families.add(family)));
     return Array.from(families).sort((a, b) => a.localeCompare(b));
   }, [ownedKeys, ownedStoryKeyWorlds, storyKeyWorlds]);
+
+  const keySuggestions = useMemo(() => {
+    if (selectedGoals.length === 0 || ownedKeys.length === 0) {
+      return [];
+    }
+
+    const plannerSeedKey = (plannerSeedMonsterIds || []).slice().sort().join(',');
+    const neededByFamily: Record<string, number> = {};
+    const addCounts = (target: Record<string, number>, source: Record<string, number>) => {
+      Object.entries(source).forEach(([family, count]) => {
+        target[family] = (target[family] || 0) + count;
+      });
+    };
+
+    const collectBaseRequirementsFromNode = (node: NonNullable<BreedingPlan['tree']>): Record<string, number> => {
+      if (node.kind === 'family') {
+        return { [node.value.replace(/^Any\s+/i, '')]: 1 };
+      }
+
+      const totals: Record<string, number> = {};
+      if (node.left) {
+        addCounts(totals, collectBaseRequirementsFromNode(node.left));
+      }
+      if (node.right) {
+        addCounts(totals, collectBaseRequirementsFromNode(node.right));
+      }
+      return totals;
+    };
+
+    const collectCheckedCoverage = (
+      node: NonNullable<BreedingPlan['tree']>,
+      checkedNodes: Set<string>,
+      path: string
+    ): Record<string, number> => {
+      if (checkedNodes.has(path)) {
+        return collectBaseRequirementsFromNode(node);
+      }
+
+      if (node.kind === 'family') {
+        return {};
+      }
+
+      const totals: Record<string, number> = {};
+      if (node.left) {
+        addCounts(totals, collectCheckedCoverage(node.left, checkedNodes, `${path}.L`));
+      }
+      if (node.right) {
+        addCounts(totals, collectCheckedCoverage(node.right, checkedNodes, `${path}.R`));
+      }
+      return totals;
+    };
+
+    selectedGoals.forEach((goalId) => {
+      const plan = breedingPlans[goalId];
+      if (!plan) {
+        return;
+      }
+
+      const baseRemaining = { ...(plan.baseRequirements || plan.remainingRequirements || {}) };
+      const goalStateKey = `${goalId}::${plannerSeedKey}`;
+      const progress = loadPlannerProgress(goalStateKey);
+      const checkedNodes = new Set(progress?.checkedNodes || []);
+
+      if (plan.tree && checkedNodes.size > 0) {
+        const checkedCoverage = collectCheckedCoverage(plan.tree, checkedNodes, 'root');
+        Object.entries(checkedCoverage).forEach(([family, covered]) => {
+          baseRemaining[family] = Math.max(0, (baseRemaining[family] || 0) - covered);
+          if (baseRemaining[family] === 0) {
+            delete baseRemaining[family];
+          }
+        });
+      }
+
+      const requirements = baseRemaining;
+      Object.entries(requirements).forEach(([family, count]) => {
+        neededByFamily[family] = (neededByFamily[family] || 0) + count;
+      });
+    });
+
+    const rarityByDescriptor = new Map(KEY_DESCRIPTORS.map((descriptor, index) => [descriptor, index]));
+
+    return ownedKeys
+      .map((ownedKey) => {
+        const option = KEY_FAMILY_BY_CODE.get(ownedKey.family);
+        const keyFamilies = option?.availableFamilies || [];
+        const matchedFamilies = keyFamilies.filter((family) => (neededByFamily[family] || 0) > 0);
+        const matchedNeededCount = matchedFamilies.reduce((sum, family) => sum + (neededByFamily[family] || 0), 0);
+        const rarityScore = rarityByDescriptor.get(ownedKey.descriptor) ?? -1;
+        return {
+          ...ownedKey,
+          matchedFamilies,
+          matchedNeededCount,
+          rarityScore
+        };
+      })
+      .filter((suggestion) => suggestion.matchedNeededCount > 0)
+      .sort((a, b) => {
+        if (a.matchedNeededCount !== b.matchedNeededCount) {
+          return b.matchedNeededCount - a.matchedNeededCount;
+        }
+        if (a.rarityScore !== b.rarityScore) {
+          return b.rarityScore - a.rarityScore;
+        }
+        const aName = `${a.descriptor} ${a.family}`;
+        const bName = `${b.descriptor} ${b.family}`;
+        return aName.localeCompare(bName);
+      });
+  }, [selectedGoals, ownedKeys, breedingPlans, plannerSeedMonsterIds]);
 
   return (
     <div className="monster-list">
@@ -375,6 +490,39 @@ export const MonsterList: React.FC<MonsterListProps> = ({
             </div>
           )}
         </div>
+
+        {selectedGoals.length > 0 && (
+          <div className="key-suggestions">
+            <h4>Suggested Keys for Current Goal(s)</h4>
+            {keySuggestions.length === 0 ? (
+              <p className="tree-help">No owned keys currently match remaining required families.</p>
+            ) : (
+              <div className="keys-grid">
+                {keySuggestions.map((suggestion) => (
+                  <div key={`suggestion-${suggestion.id}`} className="key-card suggestion-card">
+                    <div className="key-card-main">
+                      <strong>{suggestion.descriptor} {suggestion.family}</strong>
+                      <span className="combobox-meta">
+                        Matches {suggestion.matchedNeededCount} needed monster
+                        {suggestion.matchedNeededCount === 1 ? '' : 's'}
+                      </span>
+                      <div className="key-family-pills">
+                        {suggestion.matchedFamilies.map((family) => (
+                          <span
+                            key={`suggested-${suggestion.id}-${family}`}
+                            className={`stable-family-pill family-${family.toLowerCase()}`}
+                          >
+                            {family}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {ownedKeys.length > 0 && (
           <div className="keys-grid">

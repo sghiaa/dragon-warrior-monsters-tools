@@ -23,6 +23,13 @@ export interface GoalAutoAssignment {
   checkedNodeNames: Record<string, string>;
 }
 
+const isPlannerDebugEnabled = (): boolean => {
+  if (typeof process !== 'undefined' && process.env) {
+    return process.env.REACT_APP_PLANNER_DEBUG === '1';
+  }
+  return false;
+};
+
 export const deriveUserMonstersFromOwned = (ownedMonsters: OwnedMonster[]): UserMonster[] => {
   const grouped = new Map<string, { count: number; maleCount: number; femaleCount: number }>();
   ownedMonsters.forEach((owned) => {
@@ -89,16 +96,8 @@ const collectSlots = (
   }
 };
 
-const isBlocked = (path: string, takenPaths: Set<string>) => {
-  const parts = path.split('.');
-  for (let i = 1; i <= parts.length; i++) {
-    const ancestor = parts.slice(0, i).join('.');
-    if (ancestor !== path && takenPaths.has(ancestor)) {
-      return true;
-    }
-  }
-  return false;
-};
+const sharesBranchPath = (a: string, b: string) =>
+  a === b || a.startsWith(`${b}.`) || b.startsWith(`${a}.`);
 
 const getSiblingPath = (path: string): string | null => {
   if (path.endsWith('.L')) {
@@ -139,6 +138,7 @@ export const computeAutoAssignments = (
   });
 
   const takenByGoal = new Map<string, Set<string>>();
+  const usedOwnedIds = new Set<string>();
   const ensureGoalSet = (goalId: string) => {
     if (!takenByGoal.has(goalId)) {
       takenByGoal.set(goalId, new Set<string>());
@@ -146,7 +146,12 @@ export const computeAutoAssignments = (
     return takenByGoal.get(goalId)!;
   };
 
-  const assign = (goalId: string, path: string, owned: OwnedMonster) => {
+  const assign = (
+    goalId: string,
+    path: string,
+    owned: OwnedMonster,
+    pass: 'exact' | 'family'
+  ) => {
     result[goalId].checkedNodes.push(path);
     result[goalId].checkedNodeGenders[path] = owned.gender;
     if (owned.nickname.trim()) {
@@ -165,11 +170,18 @@ export const computeAutoAssignments = (
     }
 
     ensureGoalSet(goalId).add(path);
+    usedOwnedIds.add(owned.id);
+
+    if (isPlannerDebugEnabled()) {
+      console.log(
+        `[Planner AutoAssign] placed (${pass}) goal=${goalId} path=${path} monster=${owned.monsterId} nickname=${owned.nickname.trim() || '-'} gender=${owned.gender}`
+      );
+    }
   };
 
   const isSlotAvailable = (goalId: string, path: string) => {
     const set = ensureGoalSet(goalId);
-    return !set.has(path) && !isBlocked(path, set);
+    return !Array.from(set).some((takenPath) => sharesBranchPath(path, takenPath));
   };
 
   const isGenderCompatible = (goalId: string, path: string, owned: OwnedMonster) => {
@@ -191,103 +203,75 @@ export const computeAutoAssignments = (
     return siblingGender !== owned.gender;
   };
 
-  // Pass 1: assign all exact species matches first.
-  const remainingOwned: OwnedMonster[] = [];
-  for (const owned of ownedMonsters) {
-    const exactCandidates = monsterSlots
-      .filter((slot) =>
-        slot.speciesId === owned.monsterId &&
-        isSlotAvailable(slot.goalId, slot.path) &&
-        isGenderCompatible(slot.goalId, slot.path, owned)
-      )
-      .map((slot) => {
-        const siblingPath = getSiblingPath(slot.path);
-        const siblingAssignedGender = siblingPath
-          ? result[slot.goalId].checkedNodeGenders[siblingPath]
-          : undefined;
-        const siblingIsChecked = siblingPath
-          ? result[slot.goalId].checkedNodes.includes(siblingPath)
-          : false;
-        const immediateBreed = siblingAssignedGender
-          ? siblingAssignedGender !== owned.gender
-            ? 2
-            : 0
-          : 1;
-        return { ...slot, siblingIsChecked, immediateBreed };
-      })
-      .sort((a, b) => {
-        // Prefer branch completion over broad coverage:
-        // 1) sibling already checked
-        // 2) immediate opposite-gender pairing
-        // 3) deeper nodes
-        // 4) smaller subtree
-        if (a.siblingIsChecked !== b.siblingIsChecked) {
-          return a.siblingIsChecked ? -1 : 1;
-        }
-        if (a.immediateBreed !== b.immediateBreed) {
-          return b.immediateBreed - a.immediateBreed;
-        }
-        if (a.depth !== b.depth) {
-          return b.depth - a.depth;
-        }
-        if (a.subtreeSize !== b.subtreeSize) {
-          return a.subtreeSize - b.subtreeSize;
-        }
-        return (goalOrder.get(a.goalId) || 0) - (goalOrder.get(b.goalId) || 0);
-      });
+  const sortedExactSlots = monsterSlots
+    .slice()
+    .sort((a, b) => {
+      if (a.depth !== b.depth) {
+        return a.depth - b.depth;
+      }
+      if (a.subtreeSize !== b.subtreeSize) {
+        return a.subtreeSize - b.subtreeSize;
+      }
+      return (goalOrder.get(a.goalId) || 0) - (goalOrder.get(b.goalId) || 0);
+    });
 
-    if (exactCandidates.length > 0) {
-      const picked = exactCandidates[0];
-      assign(picked.goalId, picked.path, owned);
+  // Pass 1: walk exact slots top-down and fill each with the best available owned match.
+  for (const slot of sortedExactSlots) {
+    if (!isSlotAvailable(slot.goalId, slot.path)) {
       continue;
     }
-    remainingOwned.push(owned);
+
+    const matchingOwned = ownedMonsters
+      .filter((owned) =>
+        !usedOwnedIds.has(owned.id) &&
+        owned.monsterId === slot.speciesId &&
+        isGenderCompatible(slot.goalId, slot.path, owned)
+      )
+      .sort((a, b) => a.id.localeCompare(b.id));
+
+    if (matchingOwned.length > 0) {
+      assign(slot.goalId, slot.path, matchingOwned[0], 'exact');
+    }
   }
 
-  // Pass 2: greedily place remaining monsters into family slots.
-  for (const owned of remainingOwned) {
-    const monster = getMonsterById(owned.monsterId);
-    const family = monster?.family;
-    if (!family) {
+  const sortedFamilySlots = familySlots
+    .slice()
+    .sort((a, b) => {
+      if (a.depth !== b.depth) {
+        return a.depth - b.depth;
+      }
+      return (goalOrder.get(a.goalId) || 0) - (goalOrder.get(b.goalId) || 0);
+    });
+
+  // Pass 2: walk family slots top-down and fill each with the highest-rank available family match.
+  for (const slot of sortedFamilySlots) {
+    if (!isSlotAvailable(slot.goalId, slot.path)) {
       continue;
     }
 
-    const familyCandidates = familySlots
-      .filter((slot) =>
-        slot.family === family &&
-        isSlotAvailable(slot.goalId, slot.path) &&
-        isGenderCompatible(slot.goalId, slot.path, owned)
-      )
-      .map((slot) => {
-        const siblingAssignedGender = slot.siblingPath
-          ? result[slot.goalId].checkedNodeGenders[slot.siblingPath]
-          : undefined;
-        const siblingIsChecked = slot.siblingPath
-          ? result[slot.goalId].checkedNodes.includes(slot.siblingPath)
-          : false;
-        const immediateBreed = siblingAssignedGender
-          ? siblingAssignedGender !== owned.gender
-            ? 2
-            : 0
-          : 1;
-        return { ...slot, immediateBreed, siblingIsChecked };
+    const matchingOwned = ownedMonsters
+      .filter((owned) => {
+        if (usedOwnedIds.has(owned.id)) {
+          return false;
+        }
+        const monster = getMonsterById(owned.monsterId);
+        return !!monster &&
+          monster.family === slot.family &&
+          isGenderCompatible(slot.goalId, slot.path, owned);
       })
       .sort((a, b) => {
-        if (a.siblingIsChecked !== b.siblingIsChecked) {
-          return a.siblingIsChecked ? -1 : 1;
+        const monsterA = getMonsterById(a.monsterId);
+        const monsterB = getMonsterById(b.monsterId);
+        const rankA = monsterA?.rank || 0;
+        const rankB = monsterB?.rank || 0;
+        if (rankA !== rankB) {
+          return rankB - rankA;
         }
-        if (a.immediateBreed !== b.immediateBreed) {
-          return b.immediateBreed - a.immediateBreed;
-        }
-        if (a.depth !== b.depth) {
-          return b.depth - a.depth;
-        }
-        return (goalOrder.get(a.goalId) || 0) - (goalOrder.get(b.goalId) || 0);
+        return a.monsterId.localeCompare(b.monsterId);
       });
 
-    if (familyCandidates.length > 0) {
-      const picked = familyCandidates[0];
-      assign(picked.goalId, picked.path, owned);
+    if (matchingOwned.length > 0) {
+      assign(slot.goalId, slot.path, matchingOwned[0], 'family');
     }
   }
 

@@ -28,6 +28,30 @@ jest.mock('../data/monsters', () => {
       intelligenceGrowth: 1
     },
     {
+      id: 'saberman',
+      name: 'Saberman',
+      family: 'Beast',
+      rank: 1,
+      hpGrowth: 1,
+      mpGrowth: 1,
+      attackGrowth: 1,
+      defenseGrowth: 1,
+      agilityGrowth: 1,
+      intelligenceGrowth: 1
+    },
+    {
+      id: 'chimera',
+      name: 'Chimera',
+      family: 'Beast',
+      rank: 1,
+      hpGrowth: 1,
+      mpGrowth: 1,
+      attackGrowth: 1,
+      defenseGrowth: 1,
+      agilityGrowth: 1,
+      intelligenceGrowth: 1
+    },
+    {
       id: 'dracolord1',
       name: 'Dracolord1',
       family: 'Boss',
@@ -67,8 +91,11 @@ jest.mock('../data/monsters', () => {
 
   const RAW_BREEDING_PAIRS = [
     { result: 'Grizzly', parent1: 'Any Beast', parent2: 'Any Devil' },
+    { result: 'Saberman', parent1: 'Any Beast', parent2: 'Any Devil' },
     { result: 'Unicorn', parent1: 'Grizzly', parent2: 'Any Slime' },
     { result: 'Unicorn', parent1: 'Any Beast', parent2: 'Any Slime' },
+    { result: 'Chimera', parent1: 'Grizzly', parent2: 'Any Slime' },
+    { result: 'Chimera', parent1: 'Saberman', parent2: 'Any Slime' },
     { result: 'Dracolord1', parent1: 'Any Slime', parent2: 'Any Dragon' },
     { result: 'Darkhorn', parent1: 'Any Boss', parent2: 'Any Beast' }
   ];
@@ -95,6 +122,21 @@ describe('BreedingPathfinder', () => {
       result: 'unicorn'
     });
     expect(plan.baseRequirements).toEqual({ Beast: 1, Slime: 1 });
+  });
+
+  it('prefers owned-friendly route when shortest-path costs are tied', () => {
+    const pathfinder = new BreedingPathfinder([
+      { monsterId: 'grizzly', count: 1, maleCount: 1, femaleCount: 0 }
+    ]);
+    const plan = pathfinder.findBreedingPath('chimera');
+
+    expect(plan.isPossible).toBe(true);
+    expect(plan.steps.length).toBe(2);
+    expect(plan.steps[1]).toMatchObject({
+      parent1: 'grizzly',
+      parent2: 'Any Slime',
+      result: 'chimera'
+    });
   });
 
   it('expands generic Boss requirements through dracolord1', () => {

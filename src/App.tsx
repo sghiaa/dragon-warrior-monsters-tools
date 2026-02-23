@@ -5,6 +5,7 @@ import { GoalSelector } from './components/GoalSelector';
 import { BreedingPlan } from './components/BreedingPlan';
 import { UnlimitedBreeding } from './components/UnlimitedBreeding';
 import { MonsterDetail } from './components/MonsterDetail';
+import { MovePlanner } from './components/MovePlanner';
 import { loadFromStorage, loadUiState, saveToStorage, saveUiState } from './utils/storage';
 import { BreedingPlan as BreedingPlanType, OwnedKey, OwnedMonster } from './types/monster';
 import { initializeData, MONSTERS } from './data/monsters';
@@ -17,7 +18,7 @@ function App() {
   const [ownedKeys, setOwnedKeys] = useState<OwnedKey[]>([]);
   const [ownedStoryKeyWorlds, setOwnedStoryKeyWorlds] = useState<string[]>([]);
   const [hasHydratedStorage, setHasHydratedStorage] = useState(false);
-  const [activeTab, setActiveTab] = useState<'collection' | 'possibilities' | 'planner' | 'unlimited'>('collection');
+  const [activeTab, setActiveTab] = useState<'collection' | 'possibilities' | 'planner' | 'unlimited' | 'moves'>('collection');
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const [breedingPlans, setBreedingPlans] = useState<Record<string, BreedingPlanType>>({});
   const [plannerSeedMonsterIds, setPlannerSeedMonsterIds] = useState<string[] | null>(null);
@@ -257,6 +258,12 @@ function App() {
             >
               Unlimited Breeding
             </button>
+            <button
+              className={`tab ${activeTab === 'moves' ? 'active' : ''}`}
+              onClick={() => setActiveTab('moves')}
+            >
+              Move Planner
+            </button>
           </div>
 
           <main className="app-main">
@@ -274,6 +281,9 @@ function App() {
                     ownedMonsters={ownedMonsters}
                     ownedKeys={ownedKeys}
                     ownedStoryKeyWorlds={ownedStoryKeyWorlds}
+                    selectedGoals={selectedGoals}
+                    breedingPlans={breedingPlans}
+                    plannerSeedMonsterIds={plannerSeedMonsterIds}
                     monsterStepCounts={stableStepCounts}
                     onOwnedMonsterAdd={handleOwnedMonsterAdd}
                     onOwnedMonsterRemove={handleOwnedMonsterRemove}
@@ -327,6 +337,13 @@ function App() {
 
                 {activeTab === 'unlimited' && (
                   <UnlimitedBreeding onPinToPlanner={handlePinToPlanner} />
+                )}
+
+                {activeTab === 'moves' && (
+                  <MovePlanner
+                    userMonsters={userMonsters}
+                    stableStepCounts={stableStepCounts}
+                  />
                 )}
               </>
             )}

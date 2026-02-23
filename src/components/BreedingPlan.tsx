@@ -23,6 +23,8 @@ export const BreedingPlan: React.FC<BreedingPlanProps> = ({ plan, goalStateKey, 
     checkedNodeGenders: {} as Record<string, Gender>,
     checkedNodeNames: {} as Record<string, string>
   }, [autoAssignment]);
+  const sharesBranchPath = (a: string, b: string) =>
+    a === b || a.startsWith(`${b}.`) || b.startsWith(`${a}.`);
 
   const getMonsterName = (monsterId: string): string => {
     const monster = getMonsterById(monsterId);
@@ -110,7 +112,33 @@ export const BreedingPlan: React.FC<BreedingPlanProps> = ({ plan, goalStateKey, 
     }
 
     const previousAutoChecked = new Set(saved.autoCheckedNodes || []);
-    const savedManualChecked = (saved.checkedNodes || []).filter((path) => !previousAutoChecked.has(path));
+    const prefillChecked = new Set(prefill.checkedNodes || []);
+    const prefillNames = new Set(
+      Object.values(prefill.checkedNodeNames || {})
+        .map((name) => name.trim())
+        .filter((name) => name.length > 0)
+    );
+
+    const savedManualChecked = (saved.checkedNodes || []).filter((path) => {
+      if (previousAutoChecked.has(path)) {
+        return false;
+      }
+
+      // If this saved node overlaps a currently auto-assigned branch,
+      // keep the current auto assignment authoritative and drop stale placement.
+      if (Array.from(prefillChecked).some((autoPath) => sharesBranchPath(path, autoPath))) {
+        return false;
+      }
+
+      // If nicknames are unique (required by this app), do not allow an older saved
+      // manual node to keep the same monster nickname as a current auto assignment.
+      const savedName = (saved.checkedNodeNames?.[path] || '').trim();
+      if (savedName && prefillNames.has(savedName)) {
+        return false;
+      }
+
+      return true;
+    });
     const mergedCheckedNodes = new Set([...savedManualChecked, ...prefill.checkedNodes]);
 
     const mergedGenders: Record<string, Gender> = { ...prefill.checkedNodeGenders };

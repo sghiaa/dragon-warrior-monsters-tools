@@ -9,8 +9,14 @@ jest.mock('../data/monsters', () => ({
       saberman: 'Beast',
       devila: 'Devil',
       goldslime: 'Slime',
+      metalking: 'Slime',
+      spotslime: 'Slime',
       bar: 'Beast',
       foo: 'Beast'
+    };
+    const rankMap: Record<string, number> = {
+      metalking: 8,
+      spotslime: 1
     };
 
     if (!familyMap[id]) {
@@ -21,7 +27,7 @@ jest.mock('../data/monsters', () => ({
       id,
       name: id,
       family: familyMap[id],
-      rank: 1,
+      rank: rankMap[id] || 1,
       hpGrowth: 1,
       mpGrowth: 1,
       attackGrowth: 1,
@@ -186,7 +192,7 @@ describe('computeAutoAssignments', () => {
     expect(assignments.goal_landowl.checkedNodeGenders['root.R']).toBe('female');
   });
 
-  it('prioritizes exact-match placement in the branch that is closer to completion', () => {
+  it('prioritizes exact-match placement by higher tree level over branch completion', () => {
     const selectedGoals = ['goal_darkdrium_like'];
     const breedingPlans: Record<string, BreedingPlan> = {
       goal_darkdrium_like: {
@@ -221,8 +227,8 @@ describe('computeAutoAssignments', () => {
     const assignments = computeAutoAssignments(selectedGoals, breedingPlans, owned);
 
     expect(assignments.goal_darkdrium_like.checkedNodes).toContain('root.R.L');
-    expect(assignments.goal_darkdrium_like.checkedNodes).toContain('root.R.R');
-    expect(assignments.goal_darkdrium_like.checkedNodes).not.toContain('root.L.R');
+    expect(assignments.goal_darkdrium_like.checkedNodes).toContain('root.L.R');
+    expect(assignments.goal_darkdrium_like.checkedNodes).not.toContain('root.R.R');
   });
 
   it('enforces opposite-gender pairing for family-slot assignment', () => {
@@ -282,5 +288,71 @@ describe('computeAutoAssignments', () => {
     expect(assignments.goal_gender_pair_ok.checkedNodes).toContain('root.R');
     expect(assignments.goal_gender_pair_ok.checkedNodeGenders['root.R']).toBe('female');
     expect(assignments.goal_gender_pair_ok.checkedNodeNames['root.R']).toBe('DevF');
+  });
+
+  it('prioritizes higher-rank owned monsters for generic family slots', () => {
+    const selectedGoals = ['goal_one_slime_slot'];
+    const breedingPlans: Record<string, BreedingPlan> = {
+      goal_one_slime_slot: {
+        targetMonster: 'goal_one_slime_slot',
+        steps: [],
+        isPossible: true,
+        missingMonsters: [],
+        tree: {
+          kind: 'monster',
+          value: 'goal_one_slime_slot',
+          left: { kind: 'family', value: 'Any Slime' },
+          right: { kind: 'family', value: 'Any Beast' }
+        }
+      }
+    };
+
+    const owned: OwnedMonster[] = [
+      { id: 'owned-spotslime', monsterId: 'spotslime', gender: 'male', nickname: 'Spot' },
+      { id: 'owned-metalking', monsterId: 'metalking', gender: 'male', nickname: 'Metam' },
+      { id: 'owned-beast', monsterId: 'foo', gender: 'female', nickname: 'Beasty' }
+    ];
+
+    const assignments = computeAutoAssignments(selectedGoals, breedingPlans, owned);
+    const goal = assignments.goal_one_slime_slot;
+
+    expect(goal.checkedNodes).toContain('root.L');
+    expect(goal.checkedNodeNames['root.L']).toBe('Metam');
+  });
+
+  it('prioritizes higher-level tree nodes and blocks descendant assignment on same branch', () => {
+    const selectedGoals = ['goal_branch_block'];
+    const breedingPlans: Record<string, BreedingPlan> = {
+      goal_branch_block: {
+        targetMonster: 'goal_branch_block',
+        steps: [],
+        isPossible: true,
+        missingMonsters: [],
+        tree: {
+          kind: 'monster',
+          value: 'goal_branch_block',
+          left: {
+            kind: 'monster',
+            value: 'pizzaro',
+            left: { kind: 'family', value: 'Any Slime' },
+            right: { kind: 'family', value: 'Any Beast' }
+          },
+          right: { kind: 'family', value: 'Any Devil' }
+        }
+      }
+    };
+
+    const owned: OwnedMonster[] = [
+      { id: 'owned-pizzaro', monsterId: 'pizzaro', gender: 'male', nickname: 'Pizza' },
+      { id: 'owned-slime', monsterId: 'goldslime', gender: 'female', nickname: 'Gold' },
+      { id: 'owned-beast', monsterId: 'foo', gender: 'female', nickname: 'Beasty' }
+    ];
+
+    const assignments = computeAutoAssignments(selectedGoals, breedingPlans, owned);
+    const goal = assignments.goal_branch_block;
+
+    expect(goal.checkedNodes).toContain('root.L');
+    expect(goal.checkedNodes).not.toContain('root.L.L');
+    expect(goal.checkedNodes).not.toContain('root.L.R');
   });
 });
