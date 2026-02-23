@@ -7,7 +7,7 @@ import {
   getCombinableSkills,
   getMonstersWithMove,
   getMoveUsageInfo,
-  planMoveAcquisition
+  planMoveAcquisitionForTargets
 } from '../utils/movePlanner';
 import { BreedingPlan } from './BreedingPlan';
 
@@ -18,7 +18,7 @@ interface MovePlannerProps {
 
 export const MovePlanner: React.FC<MovePlannerProps> = ({ userMonsters, stableStepCounts }) => {
   const [recipes, setRecipes] = useState<SkillRecipe[]>([]);
-  const [selectedMove, setSelectedMove] = useState<string>('');
+  const [selectedMoves, setSelectedMoves] = useState<string[]>([]);
   const [query, setQuery] = useState<string>('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -38,39 +38,81 @@ export const MovePlanner: React.FC<MovePlannerProps> = ({ userMonsters, stableSt
       .slice(0, 100);
   }, [allSkills, query]);
 
+  const selectedMoveSet = useMemo(() => new Set(selectedMoves), [selectedMoves]);
+
+  const addMove = (moveName: string) => {
+    if (!moveName) {
+      return;
+    }
+    setSelectedMoves((prev) => (prev.includes(moveName) ? prev : [...prev, moveName]));
+    setQuery('');
+  };
+
+  const removeMove = (moveName: string) => {
+    setSelectedMoves((prev) => prev.filter((entry) => entry !== moveName));
+  };
+
   const movePlan = useMemo(() => {
-    if (!selectedMove) {
+    if (selectedMoves.length === 0) {
       return null;
     }
-    return planMoveAcquisition(selectedMove, recipes, MONSTERS, stableStepCounts);
-  }, [selectedMove, recipes, stableStepCounts]);
-  const selectedRecipe = useMemo(
-    () => recipes.find((recipe) => recipe.name === selectedMove),
-    [recipes, selectedMove]
+    return planMoveAcquisitionForTargets(selectedMoves, recipes, MONSTERS, stableStepCounts);
+  }, [selectedMoves, recipes, stableStepCounts]);
+  const selectedRecipes = useMemo(
+    () => selectedMoves.map((name) => recipes.find((recipe) => recipe.name === name)).filter(Boolean) as SkillRecipe[],
+    [recipes, selectedMoves]
   );
-  const isDirectMove = !!selectedRecipe && selectedRecipe.combineFrom.length === 0 && !selectedRecipe.precursor;
+  const selectedDirectMoves = useMemo(
+    () => selectedRecipes
+      .filter((recipe) => recipe.combineFrom.length === 0 && !recipe.precursor)
+      .map((recipe) => recipe.name),
+    [selectedRecipes]
+  );
+  const isDirectOnlySelection =
+    selectedMoves.length > 0 &&
+    selectedRecipes.length === selectedMoves.length &&
+    selectedDirectMoves.length === selectedMoves.length;
   const moveUsageInfo = useMemo(
-    () => (selectedMove ? getMoveUsageInfo(selectedMove, recipes) : null),
-    [selectedMove, recipes]
+    () => (selectedMoves.length === 1 ? getMoveUsageInfo(selectedMoves[0], recipes) : null),
+    [selectedMoves, recipes]
   );
   const directMoveLearners = useMemo(() => {
-    if (!selectedMove || !isDirectMove) {
+    if (!isDirectOnlySelection || selectedDirectMoves.length === 0) {
       return [];
     }
-    return getMonstersWithMove(selectedMove, MONSTERS, stableStepCounts);
-  }, [selectedMove, isDirectMove, stableStepCounts]);
-  const selectedMoveRequirements = selectedRecipe?.requirements;
-  const requirementParts = selectedMoveRequirements
-    ? [
-        `Lvl ${selectedMoveRequirements.level}`,
-        `HP ${selectedMoveRequirements.hp}`,
-        `MP ${selectedMoveRequirements.mp}`,
-        `ATK ${selectedMoveRequirements.attack}`,
-        `DEF ${selectedMoveRequirements.defense}`,
-        `AGL ${selectedMoveRequirements.agility}`,
-        `INT ${selectedMoveRequirements.intelligence}`
-      ]
-    : [];
+    const byId = new Map<string, { monsterId: string; monsterName: string; stepCount: number }>();
+    selectedDirectMoves.forEach((moveName) => {
+      getMonstersWithMove(moveName, MONSTERS, stableStepCounts).forEach((entry) => {
+        const existing = byId.get(entry.monsterId);
+        if (!existing || (entry.stepCount >= 0 && (existing.stepCount < 0 || entry.stepCount < existing.stepCount))) {
+          byId.set(entry.monsterId, entry);
+        }
+      });
+    });
+    return Array.from(byId.values()).sort((a, b) => {
+      const stepA = a.stepCount < 0 ? Number.MAX_SAFE_INTEGER : a.stepCount;
+      const stepB = b.stepCount < 0 ? Number.MAX_SAFE_INTEGER : b.stepCount;
+      if (stepA !== stepB) {
+        return stepA - stepB;
+      }
+      return a.monsterName.localeCompare(b.monsterName);
+    });
+  }, [isDirectOnlySelection, selectedDirectMoves, stableStepCounts]);
+
+  const selectedRequirementParts = useMemo(
+    () =>
+      selectedRecipes.map((recipe) => {
+        const req = recipe.requirements;
+        if (!req) {
+          return { move: recipe.name, text: null as string | null };
+        }
+        return {
+          move: recipe.name,
+          text: `Lvl ${req.level}, HP ${req.hp}, MP ${req.mp}, ATK ${req.attack}, DEF ${req.defense}, AGL ${req.agility}, INT ${req.intelligence}`
+        };
+      }),
+    [selectedRecipes]
+  );
 
   const pathfinder = useMemo(() => new BreedingPathfinder(userMonsters), [userMonsters]);
   const monsterPlans = useMemo(() => {
@@ -87,9 +129,29 @@ export const MovePlanner: React.FC<MovePlannerProps> = ({ userMonsters, stableSt
     <div className="move-planner">
       <h2>Move Combination Planner</h2>
       <p className="tree-help">
-        Pick a move that is learned from combining other moves, and this planner suggests monsters
-        to breed that can cover those prerequisite moves with minimum total breeding steps.
+        Pick one or more moves, and this planner suggests monsters to breed that can cover the
+        prerequisite moves with minimum total breeding steps.
       </p>
+
+      {selectedMoves.length > 0 && (
+        <div className="goal-selector-panel">
+          <div className="goal-selected-chips">
+            {selectedMoves.map((move) => (
+              <span key={`selected-move-${move}`} className="goal-chip">
+                {move}
+                <button
+                  type="button"
+                  className="goal-chip-remove"
+                  onClick={() => removeMove(move)}
+                  aria-label={`Remove ${move}`}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="goal-combobox-wrapper">
         <div className="stable-combobox">
@@ -104,11 +166,6 @@ export const MovePlanner: React.FC<MovePlannerProps> = ({ userMonsters, stableSt
               const next = e.target.value;
               setQuery(next);
               setIsMenuOpen(true);
-
-              const exact = allSkills.find((skill) => skill.name.toLowerCase() === next.trim().toLowerCase());
-              if (exact) {
-                setSelectedMove(exact.name);
-              }
             }}
           />
           {isMenuOpen && filteredSkills.length > 0 && (
@@ -117,11 +174,10 @@ export const MovePlanner: React.FC<MovePlannerProps> = ({ userMonsters, stableSt
                 <button
                   key={skill.name}
                   type="button"
-                  className={`combobox-option ${selectedMove === skill.name ? 'active' : ''}`}
+                  className={`combobox-option ${selectedMoveSet.has(skill.name) ? 'active' : ''}`}
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => {
-                    setSelectedMove(skill.name);
-                    setQuery(skill.name);
+                    addMove(skill.name);
                     setIsMenuOpen(false);
                   }}
                 >
@@ -138,13 +194,15 @@ export const MovePlanner: React.FC<MovePlannerProps> = ({ userMonsters, stableSt
         </div>
       </div>
 
-      {selectedMove && isDirectMove && (
+      {selectedMoves.length > 0 && isDirectOnlySelection && (
         <div className="stable-add-panel">
-          <h3>Monsters That Learn {selectedMove}</h3>
-          {requirementParts.length > 0 && (
-            <p>
-              <strong>Requirements:</strong> {requirementParts.join(', ')}
-            </p>
+          <h3>Monsters That Learn Selected Moves</h3>
+          {selectedRequirementParts.map((entry) =>
+            entry.text ? (
+              <p key={`req-${entry.move}`}>
+                <strong>{entry.move} requirements:</strong> {entry.text}
+              </p>
+            ) : null
           )}
           {directMoveLearners.length === 0 ? (
             <p className="tree-help">No monsters in the loaded dataset have this move listed.</p>
@@ -169,14 +227,19 @@ export const MovePlanner: React.FC<MovePlannerProps> = ({ userMonsters, stableSt
         </div>
       )}
 
-      {selectedMove && movePlan && !isDirectMove && (
+      {selectedMoves.length > 0 && movePlan && !isDirectOnlySelection && (
         <div className="stable-add-panel">
-          <h3>Suggested Path for {selectedMove}</h3>
-          {requirementParts.length > 0 && (
-            <p>
-              <strong>Requirements:</strong> {requirementParts.join(', ')}
-            </p>
+          <h3>Suggested Path for Selected Moves</h3>
+          {selectedRequirementParts.map((entry) =>
+            entry.text ? (
+              <p key={`req-${entry.move}`}>
+                <strong>{entry.move} requirements:</strong> {entry.text}
+              </p>
+            ) : null
           )}
+          <p>
+            <strong>Selected moves:</strong> {selectedMoves.join(', ')}
+          </p>
           <p>
             <strong>Required moves:</strong>{' '}
             {movePlan.requiredSkills.length > 0 ? movePlan.requiredSkills.join(', ') : 'None'}
@@ -217,7 +280,7 @@ export const MovePlanner: React.FC<MovePlannerProps> = ({ userMonsters, stableSt
         </div>
       )}
 
-      {selectedMove && moveUsageInfo && (
+      {selectedMoves.length === 1 && moveUsageInfo && (
         <div className="stable-add-panel">
           <h3>Usage In Other Move Unlocks</h3>
           {moveUsageInfo.usedInCombinations.length === 0 &&
@@ -246,13 +309,13 @@ export const MovePlanner: React.FC<MovePlannerProps> = ({ userMonsters, stableSt
         </div>
       )}
 
-      {selectedMove && !isDirectMove && monsterPlans.length > 0 && (
+      {selectedMoves.length > 0 && !isDirectOnlySelection && monsterPlans.length > 0 && (
         <div className="planner-output">
           {monsterPlans.map(({ candidate, plan }) => (
             <BreedingPlan
-              key={`move-plan-${selectedMove}-${candidate.monsterId}`}
+              key={`move-plan-${selectedMoves.join('|')}-${candidate.monsterId}`}
               plan={plan}
-              goalStateKey={`move-plan::${selectedMove}::${candidate.monsterId}`}
+              goalStateKey={`move-plan::${selectedMoves.join('|')}::${candidate.monsterId}`}
             />
           ))}
         </div>

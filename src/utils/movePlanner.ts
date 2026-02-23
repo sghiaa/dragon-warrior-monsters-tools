@@ -53,6 +53,15 @@ export const planMoveAcquisition = (
   monsters: Monster[],
   stepCounts: Record<string, number>
 ): MovePlanResult => {
+  return planMoveAcquisitionForTargets([targetSkill], recipes, monsters, stepCounts);
+};
+
+export const planMoveAcquisitionForTargets = (
+  targetSkills: string[],
+  recipes: SkillRecipe[],
+  monsters: Monster[],
+  stepCounts: Record<string, number>
+): MovePlanResult => {
   const recipesByName = new Map(recipes.map((entry) => [entry.name, entry]));
 
   const getLineageToRoot = (skill: string): string[] => {
@@ -70,22 +79,8 @@ export const planMoveAcquisition = (
     return lineage;
   };
 
-  const recipe = recipes.find((r) => r.name === targetSkill);
-  if (!recipe || (!recipe.precursor && recipe.combineFrom.length === 0)) {
-    return {
-      requiredSkills: [],
-      selectedMonsters: [],
-      uncoveredSkills: []
-    };
-  }
-
-  const ingredientSkills = recipe.combineFrom.length > 0
-    ? recipe.combineFrom
-    : recipe.precursor
-      ? [recipe.precursor]
-      : [];
-
-  if (ingredientSkills.length === 0) {
+  const normalizedTargets = Array.from(new Set(targetSkills.filter(Boolean)));
+  if (normalizedTargets.length === 0) {
     return {
       requiredSkills: [],
       selectedMonsters: [],
@@ -94,16 +89,39 @@ export const planMoveAcquisition = (
   }
 
   const requirementsByRoot = new Map<string, Set<string>>();
-  ingredientSkills.forEach((ingredient) => {
-    const lineage = getLineageToRoot(ingredient);
-    if (lineage.length === 0) {
+  normalizedTargets.forEach((targetSkill) => {
+    const recipe = recipes.find((r) => r.name === targetSkill);
+    if (!recipe || (!recipe.precursor && recipe.combineFrom.length === 0)) {
+      const direct = requirementsByRoot.get(targetSkill) || new Set<string>();
+      direct.add(targetSkill);
+      requirementsByRoot.set(targetSkill, direct);
       return;
     }
 
-    const root = lineage[lineage.length - 1];
-    const existing = requirementsByRoot.get(root) || new Set<string>();
-    lineage.forEach((skill) => existing.add(skill));
-    requirementsByRoot.set(root, existing);
+    const ingredientSkills = recipe.combineFrom.length > 0
+      ? recipe.combineFrom
+      : recipe.precursor
+        ? [recipe.precursor]
+        : [];
+
+    if (ingredientSkills.length === 0) {
+      const direct = requirementsByRoot.get(targetSkill) || new Set<string>();
+      direct.add(targetSkill);
+      requirementsByRoot.set(targetSkill, direct);
+      return;
+    }
+
+    ingredientSkills.forEach((ingredient) => {
+      const lineage = getLineageToRoot(ingredient);
+      if (lineage.length === 0) {
+        return;
+      }
+
+      const root = lineage[lineage.length - 1];
+      const existing = requirementsByRoot.get(root) || new Set<string>();
+      lineage.forEach((skill) => existing.add(skill));
+      requirementsByRoot.set(root, existing);
+    });
   });
 
   const requiredSkills = sortSkills(Array.from(requirementsByRoot.keys()));

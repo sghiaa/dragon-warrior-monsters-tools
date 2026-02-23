@@ -1,4 +1,10 @@
-import { getCombinableSkills, getMonstersWithMove, getMoveUsageInfo, planMoveAcquisition } from './movePlanner';
+import {
+  getCombinableSkills,
+  getMonstersWithMove,
+  getMoveUsageInfo,
+  planMoveAcquisition,
+  planMoveAcquisitionForTargets
+} from './movePlanner';
 import { SkillRecipe } from './skillData';
 import { Monster } from '../types/monster';
 
@@ -98,6 +104,46 @@ describe('movePlanner', () => {
   it('supports precursor-based moves like Revive', () => {
     const result = planMoveAcquisition(
       'Revive',
+      recipes,
+      monsters([
+        { id: 'v', name: 'Vivifier', skills: ['Vivify'] }
+      ]),
+      { v: 4 }
+    );
+
+    expect(result.requiredSkills).toEqual(['Vivify']);
+    expect(result.uncoveredSkills).toEqual([]);
+    expect(result.selectedMonsters.map((m) => m.monsterId)).toEqual(['v']);
+  });
+
+  it('supports planning across multiple target moves in one optimal set', () => {
+    const result = planMoveAcquisitionForTargets(
+      ['MegaMagic', 'Revive'],
+      recipes,
+      monsters([
+        { id: 'a', name: 'Alpha', skills: ['Blazemost'] },
+        { id: 'b', name: 'Beta', skills: ['Firebolt'] },
+        { id: 'c', name: 'Gamma', skills: ['Boom'] },
+        { id: 'd', name: 'Delta', skills: ['Vivify'] },
+        { id: 'e', name: 'Epsilon', skills: ['Blazemost', 'Firebolt', 'Boom', 'Vivify'] }
+      ]),
+      {
+        a: 2,
+        b: 2,
+        c: 2,
+        d: 2,
+        e: 5
+      }
+    );
+
+    expect(result.requiredSkills).toEqual(['Blazemost', 'Boom', 'Firebolt', 'Vivify']);
+    expect(result.uncoveredSkills).toEqual([]);
+    expect(result.selectedMonsters.map((m) => m.monsterId)).toEqual(['e']);
+  });
+
+  it('treats direct target moves as required skills in multi-target planning', () => {
+    const result = planMoveAcquisitionForTargets(
+      ['Vivify'],
       recipes,
       monsters([
         { id: 'v', name: 'Vivifier', skills: ['Vivify'] }
