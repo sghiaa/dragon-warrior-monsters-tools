@@ -31,6 +31,11 @@ const DEFAULT_STATS = {
 const familyCache: Record<string, string[]> = {};
 const monsterMetaByIdCache = new Map<string, Partial<Monster>>();
 
+const getDataUrl = (filename: string): string => {
+  const base = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
+  return `${base}/data/${filename}`;
+};
+
 const normalizeId = (value: string): string =>
   value.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
 
@@ -49,7 +54,7 @@ const loadMonsterMetaFromXml = async (): Promise<Map<string, Partial<Monster>>> 
   }
 
   try {
-    const response = await fetch('/data/monster-data.xml');
+    const response = await fetch(getDataUrl('monster-data.xml'));
     if (!response.ok) {
       return monsterMetaByIdCache;
     }
@@ -58,7 +63,7 @@ const loadMonsterMetaFromXml = async (): Promise<Map<string, Partial<Monster>>> 
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(xmlText, 'application/xml');
     if (xmlDoc.querySelector('parsererror')) {
-      console.error('Failed parsing /data/monster-data.xml');
+      console.error('Failed parsing monster-data.xml');
       return monsterMetaByIdCache;
     }
 
@@ -111,7 +116,8 @@ export const loadMonstersFromCSV = async (): Promise<Monster[]> => {
   
   for (const file of familyFiles) {
     try {
-      const response = await fetch(`/data/${file}.csv`);
+      const csvUrl = getDataUrl(`${file}.csv`);
+      const response = await fetch(csvUrl);
       const csvText = await response.text();
       const family = FAMILY_MAPPING[file];
       
@@ -152,7 +158,7 @@ export const loadBreedingPairsFromCSV = async (): Promise<BreedingPair[]> => {
   const breedingPairs: BreedingPair[] = [];
   
   try {
-    const response = await fetch('/data/breeding_pairs.csv');
+    const response = await fetch(getDataUrl('breeding_pairs.csv'));
     const csvText = await response.text();
     
     // Parse CSV lines
@@ -209,7 +215,7 @@ export const loadRawBreedingPairsFromCSV = async (): Promise<RawBreedingPair[]> 
   const rawPairs: RawBreedingPair[] = [];
 
   try {
-    const response = await fetch('/data/breeding_pairs.csv');
+    const response = await fetch(getDataUrl('breeding_pairs.csv'));
     const csvText = await response.text();
     const lines = csvText.split('\n').filter(line => line.trim() !== '');
 
@@ -272,7 +278,7 @@ const expandFamilyPlaceholder = async (placeholder: string): Promise<string[]> =
     }
     
     try {
-      const response = await fetch(`/data/${filename}.csv`);
+      const response = await fetch(getDataUrl(`${filename}.csv`));
       const csvText = await response.text();
       const lines = csvText.split('\n').filter(line => line.trim() !== '');
       const monsters = lines.map(line => line.trim()).filter(name => name);

@@ -7,6 +7,10 @@ export interface SkillRecipe {
 let skillRecipesCache: SkillRecipe[] | null = null;
 
 const readText = (element: Element | null | undefined): string => (element?.textContent || '').trim();
+const getDataUrl = (filename: string): string => {
+  const base = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
+  return `${base}/data/${filename}`;
+};
 
 export const loadSkillRecipesFromXml = async (): Promise<SkillRecipe[]> => {
   if (skillRecipesCache) {
@@ -14,7 +18,7 @@ export const loadSkillRecipesFromXml = async (): Promise<SkillRecipe[]> => {
   }
 
   try {
-    const response = await fetch('/data/monster-data.xml');
+    const response = await fetch(getDataUrl('monster-data.xml'));
     if (!response.ok) {
       return [];
     }
@@ -23,7 +27,7 @@ export const loadSkillRecipesFromXml = async (): Promise<SkillRecipe[]> => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(xml, 'application/xml');
     if (doc.querySelector('parsererror')) {
-      console.error('Failed parsing /data/monster-data.xml for skill recipes');
+      console.error('Failed parsing monster-data.xml for skill recipes');
       return [];
     }
 
