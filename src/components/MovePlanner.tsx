@@ -387,6 +387,7 @@ export const MovePlanner: React.FC<MovePlannerProps> = ({ userMonsters, stableSt
               key={`move-plan-${selectedMoves.join('|')}-${candidate.monsterId}`}
               plan={plan}
               goalStateKey={`move-plan::${selectedMoves.join('|')}::${candidate.monsterId}`}
+              showNativeMoves
             />
           ))}
         </div>

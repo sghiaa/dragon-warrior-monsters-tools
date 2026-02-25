@@ -3,10 +3,22 @@ import { BreedingPlan as BreedingPlanType, BreedingTreeNode, Gender } from '../t
 import { getMonsterById } from '../data/monsters';
 import { loadPlannerProgress, savePlannerProgress } from '../utils/storage';
 import { CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import {
+  collectCheckedCoverage,
+  collectRemainingMoves,
+  collectSubtreePaths,
+  combineRemainingByFamilyGender,
+  computeAdjustedRemaining,
+  computeRemainingGenderRequirements,
+  renderFamilyGenderRequirements,
+  sumRequirements
+} from '../utils/breedingPlanTree';
+import { mergePlannerProgress } from '../utils/breedingPlanProgress';
 
 interface BreedingPlanProps {
   plan: BreedingPlanType;
   goalStateKey: string;
+  showNativeMoves?: boolean;
   autoAssignment?: {
     checkedNodes: string[];
     checkedNodeGenders: Record<string, Gender>;
@@ -14,7 +26,7 @@ interface BreedingPlanProps {
   };
 }
 
-export const BreedingPlan: React.FC<BreedingPlanProps> = ({ plan, goalStateKey, autoAssignment }) => {
+export const BreedingPlan: React.FC<BreedingPlanProps> = ({ plan, goalStateKey, showNativeMoves = false, autoAssignment }) => {
   const [checkedNodes, setCheckedNodes] = useState<Set<string>>(new Set());
   const [checkedNodeGenders, setCheckedNodeGenders] = useState<Record<string, Gender>>({});
   const [checkedNodeNames, setCheckedNodeNames] = useState<Record<string, string>>({});
@@ -23,9 +35,6 @@ export const BreedingPlan: React.FC<BreedingPlanProps> = ({ plan, goalStateKey, 
     checkedNodeGenders: {} as Record<string, Gender>,
     checkedNodeNames: {} as Record<string, string>
   }, [autoAssignment]);
-  const sharesBranchPath = (a: string, b: string) =>
-    a === b || a.startsWith(`${b}.`) || b.startsWith(`${a}.`);
-
   const getMonsterName = (monsterId: string): string => {
     const monster = getMonsterById(monsterId);
     return monster ? monster.name : monsterId;
@@ -37,206 +46,64 @@ export const BreedingPlan: React.FC<BreedingPlanProps> = ({ plan, goalStateKey, 
     </a>
   );
 
-  const addCounts = (target: Record<string, number>, source: Record<string, number>) => {
-    Object.entries(source).forEach(([family, count]) => {
-      target[family] = (target[family] || 0) + count;
-    });
+  const renderNativeMovePills = (monsterId: string): React.ReactNode => {
+    if (!showNativeMoves) {
+      return null;
+    }
+
+    const monster = getMonsterById(monsterId);
+    const moves = (monster?.skills || []).filter(Boolean);
+    if (!monster || moves.length === 0) {
+      return null;
+    }
+
+    const familyClass = `family-${monster.family.toLowerCase()}`;
+    return (
+      <div className="key-family-pills">
+        {moves.map((move) => (
+          <span key={`${monsterId}-${move}`} className={`stable-family-pill ${familyClass}`}>
+            {move}
+          </span>
+        ))}
+      </div>
+    );
   };
 
   const checkedCoverage = useMemo(() => {
-    if (!plan.tree) {
-      return {};
-    }
-
-    const collectBaseRequirementsFromNode = (node: BreedingTreeNode): Record<string, number> => {
-      if (node.kind === 'family') {
-        return { [node.value.replace(/^Any\s+/i, '')]: 1 };
-      }
-
-      const totals: Record<string, number> = {};
-      if (node.left) {
-        addCounts(totals, collectBaseRequirementsFromNode(node.left));
-      }
-      if (node.right) {
-        addCounts(totals, collectBaseRequirementsFromNode(node.right));
-      }
-      return totals;
-    };
-
-    const walk = (node: BreedingTreeNode, path: string): Record<string, number> => {
-      if (checkedNodes.has(path)) {
-        return collectBaseRequirementsFromNode(node);
-      }
-
-      if (node.kind === 'family') {
-        return {};
-      }
-
-      const totals: Record<string, number> = {};
-      if (node.left) {
-        addCounts(totals, walk(node.left, `${path}.L`));
-      }
-      if (node.right) {
-        addCounts(totals, walk(node.right, `${path}.R`));
-      }
-      return totals;
-    };
-
-    return walk(plan.tree, 'root');
+    return collectCheckedCoverage(plan.tree, checkedNodes);
   }, [plan.tree, checkedNodes]);
 
   const adjustedRemaining = useMemo(() => {
-    // Use full base requirements as the baseline so visible unchecked tree
-    // requirements are reflected even when remainingRequirements has collapsed to zero.
-    const baseRemaining = { ...(plan.baseRequirements || plan.remainingRequirements || {}) };
-    Object.entries(checkedCoverage).forEach(([family, covered]) => {
-      baseRemaining[family] = Math.max(0, (baseRemaining[family] || 0) - covered);
-      if (baseRemaining[family] === 0) {
-        delete baseRemaining[family];
-      }
-    });
-    return baseRemaining;
+    return computeAdjustedRemaining(plan.baseRequirements, plan.remainingRequirements, checkedCoverage);
   }, [plan.baseRequirements, plan.remainingRequirements, checkedCoverage]);
 
-  const adjustedRemainingTotal = useMemo(() => {
-    return Object.values(adjustedRemaining).reduce((sum, count) => sum + count, 0);
-  }, [adjustedRemaining]);
+  const adjustedRemainingTotal = useMemo(() => sumRequirements(adjustedRemaining), [adjustedRemaining]);
 
   const remainingGenderRequirementsByFamily = useMemo(() => {
-    if (!plan.tree) {
-      return {} as Record<string, { total: number; male: number; female: number; unassigned: number }>;
-    }
-
-    const counts: Record<string, { total: number; male: number; female: number; unassigned: number }> = {};
-    const walk = (node: BreedingTreeNode, path: string): void => {
-      if (checkedNodes.has(path)) {
-        return;
-      }
-
-      if (node.kind === 'family') {
-        const family = node.value.replace(/^Any\s+/i, '');
-        if (!counts[family]) {
-          counts[family] = { total: 0, male: 0, female: 0, unassigned: 0 };
-        }
-        counts[family].total += 1;
-
-        const requiredGender = checkedNodeGenders[path];
-        if (requiredGender === 'male') {
-          counts[family].male += 1;
-        } else if (requiredGender === 'female') {
-          counts[family].female += 1;
-        } else {
-          counts[family].unassigned += 1;
-        }
-        return;
-      }
-
-      if (node.left) {
-        walk(node.left, `${path}.L`);
-      }
-      if (node.right) {
-        walk(node.right, `${path}.R`);
-      }
-    };
-
-    walk(plan.tree, 'root');
-    return counts;
+    return computeRemainingGenderRequirements(plan.tree, checkedNodes, checkedNodeGenders);
   }, [plan.tree, checkedNodes, checkedNodeGenders]);
 
-  const renderFamilyGenderRequirements = (
-    byFamily: Record<string, { total: number; male: number; female: number; unassigned: number }>
-  ) => {
-    const families = Object.keys(byFamily).sort((a, b) => a.localeCompare(b));
-    if (families.length === 0) {
-      return 'None';
-    }
-
-    return families.map((family) => {
-      const counts = byFamily[family];
-      const detailParts: string[] = [];
-      if (counts.male > 0) {
-        detailParts.push(`${counts.male} male`);
-      }
-      if (counts.female > 0) {
-        detailParts.push(`${counts.female} female`);
-      }
-      if (counts.unassigned > 0) {
-        detailParts.push(`${counts.unassigned} unassigned`);
-      }
-      const details = detailParts.join(', ');
-      return `${counts.total} ${family}${details ? ` (${details})` : ''}`;
-    }).join(', ');
-  };
-
   const combinedRemainingByFamilyGender = useMemo(() => {
-    const hasTreeBreakdown = Object.keys(remainingGenderRequirementsByFamily).length > 0;
-    if (hasTreeBreakdown) {
-      return remainingGenderRequirementsByFamily;
-    }
-
-    const fallback: Record<string, { total: number; male: number; female: number; unassigned: number }> = {};
-    Object.entries(adjustedRemaining).forEach(([family, count]) => {
-      fallback[family] = { total: count, male: 0, female: 0, unassigned: count };
-    });
-    return fallback;
+    return combineRemainingByFamilyGender(remainingGenderRequirementsByFamily, adjustedRemaining);
   }, [remainingGenderRequirementsByFamily, adjustedRemaining]);
+
+  const remainingMoves = useMemo(() => {
+    if (!showNativeMoves) {
+      return [] as string[];
+    }
+    return collectRemainingMoves(
+      plan.tree,
+      checkedNodes,
+      (monsterId) => getMonsterById(monsterId)?.skills || []
+    );
+  }, [showNativeMoves, plan.tree, checkedNodes]);
 
   useEffect(() => {
     const saved = loadPlannerProgress(goalStateKey);
-    if (!saved) {
-      setCheckedNodes(new Set(prefill.checkedNodes));
-      setCheckedNodeGenders(prefill.checkedNodeGenders);
-      setCheckedNodeNames(prefill.checkedNodeNames);
-      return;
-    }
-
-    const previousAutoChecked = new Set(saved.autoCheckedNodes || []);
-    const prefillChecked = new Set(prefill.checkedNodes || []);
-    const prefillNames = new Set(
-      Object.values(prefill.checkedNodeNames || {})
-        .map((name) => name.trim())
-        .filter((name) => name.length > 0)
-    );
-
-    const savedManualChecked = (saved.checkedNodes || []).filter((path) => {
-      if (previousAutoChecked.has(path)) {
-        return false;
-      }
-
-      // If this saved node overlaps a currently auto-assigned branch,
-      // keep the current auto assignment authoritative and drop stale placement.
-      if (Array.from(prefillChecked).some((autoPath) => sharesBranchPath(path, autoPath))) {
-        return false;
-      }
-
-      // If nicknames are unique (required by this app), do not allow an older saved
-      // manual node to keep the same monster nickname as a current auto assignment.
-      const savedName = (saved.checkedNodeNames?.[path] || '').trim();
-      if (savedName && prefillNames.has(savedName)) {
-        return false;
-      }
-
-      return true;
-    });
-    const mergedCheckedNodes = new Set([...savedManualChecked, ...prefill.checkedNodes]);
-
-    const mergedGenders: Record<string, Gender> = { ...prefill.checkedNodeGenders };
-    Object.entries(saved.checkedNodeGenders || {}).forEach(([path, gender]) => {
-      if (!previousAutoChecked.has(path)) {
-        mergedGenders[path] = gender;
-      }
-    });
-
-    const mergedNames: Record<string, string> = { ...prefill.checkedNodeNames };
-    Object.entries(saved.checkedNodeNames || {}).forEach(([path, name]) => {
-      if (!previousAutoChecked.has(path)) {
-        mergedNames[path] = name;
-      }
-    });
-
-    setCheckedNodes(mergedCheckedNodes);
-    setCheckedNodeGenders(mergedGenders);
-    setCheckedNodeNames(mergedNames);
+    const merged = mergePlannerProgress(saved, prefill);
+    setCheckedNodes(merged.checkedNodes);
+    setCheckedNodeGenders(merged.checkedNodeGenders);
+    setCheckedNodeNames(merged.checkedNodeNames);
   }, [goalStateKey, prefill]);
 
   useEffect(() => {
@@ -279,17 +146,6 @@ export const BreedingPlan: React.FC<BreedingPlanProps> = ({ plan, goalStateKey, 
     return Object.entries(requirements)
       .map(([family, count]) => `${count} ${family}`)
       .join(', ');
-  };
-
-  const collectSubtreePaths = (node: BreedingTreeNode, path: string): string[] => {
-    const paths = [path];
-    if (node.left) {
-      paths.push(...collectSubtreePaths(node.left, `${path}.L`));
-    }
-    if (node.right) {
-      paths.push(...collectSubtreePaths(node.right, `${path}.R`));
-    }
-    return paths;
   };
 
   const toggleChecked = (path: string, node: BreedingTreeNode) => {
@@ -392,6 +248,7 @@ export const BreedingPlan: React.FC<BreedingPlanProps> = ({ plan, goalStateKey, 
               <span className="tree-assigned-name">[{customName.trim()}]</span>
             )}
           </div>
+          {node.kind === 'monster' && renderNativeMovePills(node.value)}
           {isChecked && (
             <div className="tree-gender-toggle">
               <button
@@ -507,6 +364,12 @@ export const BreedingPlan: React.FC<BreedingPlanProps> = ({ plan, goalStateKey, 
           <strong>Remaining after owned + checked nodes:</strong>{' '}
           {adjustedRemainingTotal} ({renderFamilyGenderRequirements(combinedRemainingByFamilyGender)})
         </p>
+        {showNativeMoves && (
+          <p>
+            <strong>Remaining moves to learn:</strong>{' '}
+            {remainingMoves.length} ({remainingMoves.length > 0 ? remainingMoves.join(', ') : 'None'})
+          </p>
+        )}
         <p>
           <strong>Boss rule:</strong> Any generic Boss requirement is expanded as Dracolord1.
         </p>

@@ -1,21 +1,29 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { BreedingPlan as BreedingPlanType } from '../types/monster';
 import { BreedingPlan } from './BreedingPlan';
 
 jest.mock('../data/monsters', () => ({
-  getMonsterById: (id: string) => ({
-    id,
-    name: id,
-    family: 'Boss',
-    rank: 1,
-    hpGrowth: 1,
-    mpGrowth: 1,
-    attackGrowth: 1,
-    defenseGrowth: 1,
-    agilityGrowth: 1,
-    intelligenceGrowth: 1
-  })
+  getMonsterById: (id: string) => {
+    const byId: Record<string, { id: string; name: string; family: string; skills?: string[] }> = {
+      darkdrium: { id: 'darkdrium', name: 'darkdrium', family: 'Boss', skills: ['BigBang'] },
+      esterk: { id: 'esterk', name: 'esterk', family: 'Slime', skills: ['Bang', 'Bolt'] },
+      left_parent: { id: 'left_parent', name: 'left_parent', family: 'Dragon' },
+      right_parent: { id: 'right_parent', name: 'right_parent', family: 'Beast' }
+    };
+
+    const base = byId[id] || { id, name: id, family: 'Boss' };
+    return {
+      ...base,
+      rank: 1,
+      hpGrowth: 1,
+      mpGrowth: 1,
+      attackGrowth: 1,
+      defenseGrowth: 1,
+      agilityGrowth: 1,
+      intelligenceGrowth: 1
+    };
+  }
 }));
 
 jest.mock('../utils/storage', () => ({
@@ -183,5 +191,64 @@ describe('BreedingPlan tree interactions', () => {
     fireEvent.click(slimeCheckbox as Element);
     expect(getNodeByLabel('Any Beast')).toHaveClass('state-paired');
     expect(getNodeByLabel('Any Slime')).toHaveClass('state-paired');
+  });
+
+  it('renders native move pills on monster nodes with stable family colors when enabled', () => {
+    const planWithMonsterLeaf: BreedingPlanType = {
+      ...buildTreePlan(),
+      tree: {
+        kind: 'monster',
+        value: 'darkdrium',
+        left: { kind: 'monster', value: 'esterk' },
+        right: { kind: 'family', value: 'Any Beast' }
+      }
+    };
+
+    render(<BreedingPlan plan={planWithMonsterLeaf} goalStateKey="goal::native-moves" showNativeMoves />);
+
+    const esterkNode = getNodeByLabel('esterk');
+    const bangPill = within(esterkNode).getByText('Bang');
+    const boltPill = within(esterkNode).getByText('Bolt');
+
+    expect(bangPill).toHaveClass('stable-family-pill');
+    expect(bangPill).toHaveClass('family-slime');
+    expect(boltPill).toHaveClass('stable-family-pill');
+    expect(boltPill).toHaveClass('family-slime');
+
+    const familyNode = getNodeByLabel('Any Beast');
+    expect(within(familyNode).queryByText('Bang')).not.toBeInTheDocument();
+  });
+
+  it('shows remaining moves from all uncollapsed monster nodes and removes collapsed branch moves', () => {
+    const planWithMoves: BreedingPlanType = {
+      ...buildTreePlan(),
+      tree: {
+        kind: 'monster',
+        value: 'darkdrium',
+        left: {
+          kind: 'monster',
+          value: 'esterk',
+          left: { kind: 'family', value: 'Any Beast' },
+          right: { kind: 'family', value: 'Any Slime' }
+        },
+        right: { kind: 'monster', value: 'left_parent' }
+      }
+    };
+
+    render(<BreedingPlan plan={planWithMoves} goalStateKey="goal::remaining-moves" showNativeMoves />);
+
+    const remainingMovesLine = screen.getByText((_content, node) => {
+      if (!node || node.tagName !== 'P') {
+        return false;
+      }
+      return (node.textContent || '').includes('Remaining moves to learn:');
+    });
+
+    expect(remainingMovesLine).toHaveTextContent('Remaining moves to learn: 3 (Bang, BigBang, Bolt)');
+
+    const esterkCheckbox = screen.getByText('esterk').closest('.tree-check')?.querySelector('input');
+    fireEvent.click(esterkCheckbox as Element);
+
+    expect(remainingMovesLine).toHaveTextContent('Remaining moves to learn: 1 (BigBang)');
   });
 });

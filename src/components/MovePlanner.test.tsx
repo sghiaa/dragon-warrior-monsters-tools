@@ -3,6 +3,8 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MovePlanner } from './MovePlanner';
 import { loadSkillRecipesFromXml } from '../utils/skillData';
 
+const mockBreedingPlan = jest.fn();
+
 jest.mock('../data/monsters', () => {
   const MONSTERS = [
     {
@@ -58,13 +60,22 @@ jest.mock('../utils/skillData', () => ({
 }));
 
 jest.mock('./BreedingPlan', () => ({
-  BreedingPlan: () => <div data-testid="mock-breeding-plan" />
+  BreedingPlan: (props: { showNativeMoves?: boolean }) => {
+    mockBreedingPlan(props);
+    return (
+      <div
+        data-testid="mock-breeding-plan"
+        data-show-native-moves={props.showNativeMoves ? 'true' : 'false'}
+      />
+    );
+  }
 }));
 
 describe('MovePlanner native learners', () => {
   const mockedLoadSkillRecipesFromXml = loadSkillRecipesFromXml as jest.MockedFunction<typeof loadSkillRecipesFromXml>;
 
   beforeEach(() => {
+    mockBreedingPlan.mockReset();
     mockedLoadSkillRecipesFromXml.mockReset();
     mockedLoadSkillRecipesFromXml.mockResolvedValue([
       {
@@ -98,5 +109,22 @@ describe('MovePlanner native learners', () => {
     });
 
     expect(screen.getByTestId('native-move-BigBang')).toHaveTextContent('Wizard');
+  });
+
+  it('passes native move rendering flag to breeding plans', async () => {
+    render(<MovePlanner userMonsters={[]} stableStepCounts={{ wizard: 2, caster: 1, spark: 1 }} />);
+
+    const input = await screen.findByPlaceholderText('Select a combo move...');
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: 'BigBang' } });
+
+    const option = await screen.findByRole('button', { name: /BigBang/i });
+    fireEvent.click(option);
+
+    const plans = await screen.findAllByTestId('mock-breeding-plan');
+    expect(plans.length).toBeGreaterThan(0);
+    plans.forEach((plan) => {
+      expect(plan).toHaveAttribute('data-show-native-moves', 'true');
+    });
   });
 });
