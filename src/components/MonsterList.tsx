@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { BreedingPlan, Gender, OwnedKey, OwnedMonster } from '../types/monster';
+import { BreedingPlan, BreedingTreeNode, Gender, OwnedKey, OwnedMonster } from '../types/monster';
 import { MONSTERS, getMonsterById } from '../data/monsters';
 import { KEY_DESCRIPTORS, KEY_FAMILY_BY_CODE, KEY_FAMILY_OPTIONS } from '../data/keys';
 import { loadPlannerProgress } from '../utils/storage';
@@ -15,6 +15,7 @@ interface MonsterListProps {
   monsterStepCounts: Record<string, number>;
   onOwnedMonsterAdd: (monsterId: string, gender: Gender, nickname: string) => void;
   onOwnedMonsterRemove: (ownedMonsterId: string) => void;
+  onOwnedMonsterGenderChange: (ownedMonsterId: string, gender: Gender) => void;
   onOwnedKeyAdd: (descriptor: string, family: string) => void;
   onOwnedKeyRemove: (ownedKeyId: string) => void;
   onToggleOwnedStoryKeyWorld: (worldName: string) => void;
@@ -30,6 +31,7 @@ export const MonsterList: React.FC<MonsterListProps> = ({
   monsterStepCounts,
   onOwnedMonsterAdd,
   onOwnedMonsterRemove,
+  onOwnedMonsterGenderChange,
   onOwnedKeyAdd,
   onOwnedKeyRemove,
   onToggleOwnedStoryKeyWorld
@@ -121,6 +123,9 @@ export const MonsterList: React.FC<MonsterListProps> = ({
     const displayName = monster ? monster.name : owned.monsterId;
     const familyName = monster?.family || 'Unknown';
     const familyClass = `family-${familyName.toLowerCase()}`;
+    const planGoalId = planGoalByOwnedId.get(owned.id);
+    const goalColor = planGoalId ? goalColorByGoalId.get(planGoalId) : null;
+    const goalName = planGoalId ? (getMonsterById(planGoalId)?.name || planGoalId) : null;
     return (
       <div key={owned.id} className={`tree-node monster state-${owned.gender}`}>
         <div className="tree-check">
@@ -131,9 +136,29 @@ export const MonsterList: React.FC<MonsterListProps> = ({
           {owned.nickname.trim() && (
             <span className="tree-assigned-name">[{owned.nickname.trim()}]</span>
           )}
+          {goalColor && (
+            <span
+              className="stable-plan-dot"
+              style={{ backgroundColor: goalColor }}
+              title={goalName ? `Used for goal: ${goalName}` : 'Used in breeding plan'}
+            />
+          )}
         </div>
         <div className="tree-gender-toggle">
-          <span className="stable-gender-pill">{owned.gender === 'male' ? 'Male' : 'Female'}</span>
+          <button
+            type="button"
+            className={owned.gender === 'male' ? 'active male' : 'male'}
+            onClick={() => onOwnedMonsterGenderChange(owned.id, 'male')}
+          >
+            Male
+          </button>
+          <button
+            type="button"
+            className={owned.gender === 'female' ? 'active female' : 'female'}
+            onClick={() => onOwnedMonsterGenderChange(owned.id, 'female')}
+          >
+            Female
+          </button>
           <button
             type="button"
             className="stable-remove"
@@ -189,6 +214,109 @@ export const MonsterList: React.FC<MonsterListProps> = ({
         return a.worldName.localeCompare(b.worldName);
       });
   }, []);
+
+  const goalColorByGoalId = useMemo(() => {
+    const palette = ['#3b82f6', '#f97316', '#10b981', '#eab308', '#8b5cf6', '#ef4444', '#06b6d4', '#84cc16'];
+    const map = new Map<string, string>();
+    selectedGoals.forEach((goalId, index) => {
+      map.set(goalId, palette[index % palette.length]);
+    });
+    return map;
+  }, [selectedGoals]);
+
+  const planGoalByOwnedId = useMemo(() => {
+    const plannerSeedKey = (plannerSeedMonsterIds || []).slice().sort().join(',');
+    const goalByOwned = new Map<string, string>();
+    const usedOwnedIds = new Set<string>();
+
+    const getNodeByPath = (root: BreedingTreeNode | undefined, path: string): BreedingTreeNode | null => {
+      if (!root) {
+        return null;
+      }
+      if (path === 'root') {
+        return root;
+      }
+      let node: BreedingTreeNode | undefined = root;
+      const steps = path.split('.').slice(1);
+      for (const step of steps) {
+        node = step === 'L' ? node?.left : node?.right;
+        if (!node) {
+          return null;
+        }
+      }
+      return node || null;
+    };
+
+    const findOwnedForPath = (
+      path: string,
+      tree: BreedingTreeNode,
+      checkedNodeNames: Record<string, string>,
+      checkedNodeGenders: Record<string, Gender>
+    ): OwnedMonster | null => {
+      const nickname = (checkedNodeNames[path] || '').trim();
+      const requiredGender = checkedNodeGenders[path];
+
+      if (nickname) {
+        const byNickname = ownedMonsters.find((owned) =>
+          !usedOwnedIds.has(owned.id) &&
+          owned.nickname.trim() === nickname &&
+          (!requiredGender || owned.gender === requiredGender)
+        );
+        if (byNickname) {
+          return byNickname;
+        }
+      }
+
+      const node = getNodeByPath(tree, path);
+      if (!node) {
+        return null;
+      }
+
+      if (node.kind === 'monster') {
+        return ownedMonsters.find((owned) =>
+          !usedOwnedIds.has(owned.id) &&
+          owned.monsterId === node.value &&
+          (!requiredGender || owned.gender === requiredGender)
+        ) || null;
+      }
+
+      const family = node.value.replace(/^Any\s+/i, '');
+      return ownedMonsters.find((owned) => {
+        if (usedOwnedIds.has(owned.id)) {
+          return false;
+        }
+        if (requiredGender && owned.gender !== requiredGender) {
+          return false;
+        }
+        const ownedMonster = getMonsterById(owned.monsterId);
+        return ownedMonster?.family === family;
+      }) || null;
+    };
+
+    selectedGoals.forEach((goalId) => {
+      const plan = breedingPlans[goalId];
+      const tree = plan?.tree;
+      if (!tree) {
+        return;
+      }
+
+      const goalStateKey = `${goalId}::${plannerSeedKey}`;
+      const progress = loadPlannerProgress(goalStateKey);
+      const autoPaths = progress?.autoCheckedNodes || [];
+      const checkedNodeNames = progress?.checkedNodeNames || {};
+      const checkedNodeGenders = progress?.checkedNodeGenders || {};
+      autoPaths.forEach((path) => {
+        const owned = findOwnedForPath(path, tree, checkedNodeNames, checkedNodeGenders);
+        if (!owned) {
+          return;
+        }
+        usedOwnedIds.add(owned.id);
+        goalByOwned.set(owned.id, goalId);
+      });
+    });
+
+    return goalByOwned;
+  }, [selectedGoals, breedingPlans, plannerSeedMonsterIds, ownedMonsters]);
 
   const availableFamiliesFromKeys = useMemo(() => {
     const families = new Set<string>();
@@ -314,6 +442,23 @@ export const MonsterList: React.FC<MonsterListProps> = ({
     <div className="monster-list">
       <div className="stable-panel">
         <h2>My Stable ({ownedMonsters.length})</h2>
+        {selectedGoals.length > 0 && (
+          <div className="stable-plan-legend">
+            {selectedGoals.map((goalId) => {
+              const color = goalColorByGoalId.get(goalId);
+              if (!color) {
+                return null;
+              }
+              const goalName = getMonsterById(goalId)?.name || goalId;
+              return (
+                <span key={`plan-legend-${goalId}`} className="stable-plan-legend-item">
+                  <span className="stable-plan-dot" style={{ backgroundColor: color }} />
+                  {goalName}
+                </span>
+              );
+            })}
+          </div>
+        )}
         {ownedMonsters.length === 0 ? (
           <p className="tree-help">No monsters in stable yet.</p>
         ) : (

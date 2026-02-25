@@ -29,6 +29,7 @@ describe('MonsterList key family highlighting', () => {
     monsterStepCounts: {},
     onOwnedMonsterAdd: jest.fn(),
     onOwnedMonsterRemove: jest.fn(),
+    onOwnedMonsterGenderChange: jest.fn(),
     onOwnedKeyAdd: jest.fn(),
     onOwnedKeyRemove: jest.fn(),
     onToggleOwnedStoryKeyWorld: jest.fn()

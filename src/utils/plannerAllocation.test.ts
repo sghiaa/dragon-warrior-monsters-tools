@@ -2,14 +2,37 @@ import { BreedingPlan, OwnedMonster } from '../types/monster';
 import { computeAutoAssignments, deriveUserMonstersFromOwned } from './plannerAllocation';
 
 jest.mock('../data/monsters', () => ({
+  MONSTERS: [
+    { id: 'pizzaro', family: 'Boss' },
+    { id: 'kingleo', family: 'Beast' },
+    { id: 'saberman', family: 'Beast' },
+    { id: 'almiraj', family: 'Beast' },
+    { id: 'devila', family: 'Devil' },
+    { id: 'goldslime', family: 'Slime' },
+    { id: 'metalking', family: 'Slime' },
+    { id: 'slime', family: 'Slime' },
+    { id: 'slabbit', family: 'Slime' },
+    { id: 'spotslime', family: 'Slime' },
+    { id: 'bar', family: 'Beast' },
+    { id: 'foo', family: 'Beast' },
+    { id: 'bullbird', family: 'Bird' }
+  ],
+  RAW_BREEDING_PAIRS: [
+    { result: 'landowl', parent1: 'bullbird', parent2: 'Any Devil' },
+    { result: 'spotslime', parent1: 'Any Slime', parent2: 'Any Beast' },
+    { result: 'fangslime', parent1: 'Any Slime', parent2: 'almiraj' }
+  ],
   getMonsterById: (id: string) => {
     const familyMap: Record<string, string> = {
       pizzaro: 'Boss',
       kingleo: 'Beast',
       saberman: 'Beast',
+      almiraj: 'Beast',
       devila: 'Devil',
       goldslime: 'Slime',
       metalking: 'Slime',
+      slime: 'Slime',
+      slabbit: 'Slime',
       spotslime: 'Slime',
       bar: 'Beast',
       foo: 'Beast'
@@ -35,6 +58,18 @@ jest.mock('../data/monsters', () => ({
       agilityGrowth: 1,
       intelligenceGrowth: 1
     };
+  },
+  getBreedingResult: (parent1: string, parent2: string) => {
+    const key = [parent1, parent2].sort().join('::');
+    const resultByKey: Record<string, string> = {
+      'bullbird::devila': 'landowl',
+      'almiraj::slime': 'fangslime',
+      'almiraj::slabbit': 'fangslime',
+      'foo::slime': 'spotslime',
+      'foo::slabbit': 'spotslime'
+    };
+    const result = resultByKey[key];
+    return result ? { parent1, parent2, result } : undefined;
   }
 }));
 
@@ -241,7 +276,7 @@ describe('computeAutoAssignments', () => {
         missingMonsters: [],
         tree: {
           kind: 'monster',
-          value: 'goal_gender_pair',
+          value: 'landowl',
           left: { kind: 'monster', value: 'bullbird' },
           right: { kind: 'family', value: 'Any Devil' }
         }
@@ -269,7 +304,7 @@ describe('computeAutoAssignments', () => {
         missingMonsters: [],
         tree: {
           kind: 'monster',
-          value: 'goal_gender_pair_ok',
+          value: 'landowl',
           left: { kind: 'monster', value: 'bullbird' },
           right: { kind: 'family', value: 'Any Devil' }
         }
@@ -354,5 +389,68 @@ describe('computeAutoAssignments', () => {
     expect(goal.checkedNodes).toContain('root.L');
     expect(goal.checkedNodes).not.toContain('root.L.L');
     expect(goal.checkedNodes).not.toContain('root.L.R');
+  });
+
+  it('avoids assigning a generic family monster that would change the intended immediate result', () => {
+    const selectedGoals = ['goal_spotslime'];
+    const breedingPlans: Record<string, BreedingPlan> = {
+      goal_spotslime: {
+        targetMonster: 'goal_spotslime',
+        steps: [],
+        isPossible: true,
+        missingMonsters: [],
+        tree: {
+          kind: 'monster',
+          value: 'spotslime',
+          left: { kind: 'monster', value: 'slime' },
+          right: { kind: 'family', value: 'Any Beast' }
+        }
+      }
+    };
+
+    const owned: OwnedMonster[] = [
+      { id: 'owned-slime', monsterId: 'slime', gender: 'male', nickname: 'Slim' },
+      { id: 'owned-almiraj', monsterId: 'almiraj', gender: 'female', nickname: 'Ali' },
+      { id: 'owned-safe-beast', monsterId: 'foo', gender: 'female', nickname: 'SafeBeast' }
+    ];
+
+    const assignments = computeAutoAssignments(selectedGoals, breedingPlans, owned);
+    const goal = assignments.goal_spotslime;
+
+    expect(goal.checkedNodes).toContain('root.L');
+    expect(goal.checkedNodes).toContain('root.R');
+    expect(goal.checkedNodeNames['root.R']).toBe('SafeBeast');
+  });
+
+  it('validates sibling generic pair assignments against the intended parent result', () => {
+    const selectedGoals = ['goal_spotslime_pair'];
+    const breedingPlans: Record<string, BreedingPlan> = {
+      goal_spotslime_pair: {
+        targetMonster: 'goal_spotslime_pair',
+        steps: [],
+        isPossible: true,
+        missingMonsters: [],
+        tree: {
+          kind: 'monster',
+          value: 'spotslime',
+          left: { kind: 'family', value: 'Any Slime' },
+          right: { kind: 'family', value: 'Any Beast' }
+        }
+      }
+    };
+
+    const owned: OwnedMonster[] = [
+      { id: 'owned-slabbit', monsterId: 'slabbit', gender: 'male', nickname: 'Slab' },
+      { id: 'owned-almiraj', monsterId: 'almiraj', gender: 'female', nickname: 'Ali' },
+      { id: 'owned-safe-beast', monsterId: 'foo', gender: 'female', nickname: 'SafeBeast' }
+    ];
+
+    const assignments = computeAutoAssignments(selectedGoals, breedingPlans, owned);
+    const goal = assignments.goal_spotslime_pair;
+
+    expect(goal.checkedNodes).toContain('root.L');
+    expect(goal.checkedNodes).toContain('root.R');
+    expect(goal.checkedNodeNames['root.R']).toBe('SafeBeast');
+    expect(goal.checkedNodeNames['root.R']).not.toBe('Ali');
   });
 });

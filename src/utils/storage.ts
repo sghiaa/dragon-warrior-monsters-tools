@@ -22,7 +22,7 @@ export interface PlannerProgressState {
 }
 
 export interface UiState {
-  activeTab?: 'collection' | 'possibilities' | 'planner' | 'unlimited' | 'moves';
+  activeTab?: 'collection' | 'possibilities' | 'families' | 'planner' | 'unlimited' | 'moves';
   selectedGoal?: string | null;
   selectedGoals?: string[];
   plannerSeedMonsterIds?: string[] | null;

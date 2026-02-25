@@ -1,7 +1,12 @@
 import { MONSTERS, RAW_BREEDING_PAIRS } from '../data/monsters';
 
-const normalizeId = (value: string): string =>
-  value.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+const normalizeId = (value: string): string => {
+  const normalized = value.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+  if (normalized === 'roboster1') {
+    return 'roboster';
+  }
+  return normalized;
+};
 
 const FAMILY_ALIASES: Record<string, string> = {
   slime: 'Slime',

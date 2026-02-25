@@ -30,6 +30,7 @@ const DEFAULT_STATS = {
 // Cache for family data to avoid repeated network requests
 const familyCache: Record<string, string[]> = {};
 const monsterMetaByIdCache = new Map<string, Partial<Monster>>();
+let rawBreedingPairsCache: RawBreedingPair[] | null = null;
 
 const getDataUrl = (filename: string): string => {
   const base = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
@@ -37,7 +38,34 @@ const getDataUrl = (filename: string): string => {
 };
 
 const normalizeId = (value: string): string =>
-  value.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+  (() => {
+    const normalized = value.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+    if (normalized === 'roboster1') {
+      return 'roboster';
+    }
+    return normalized;
+  })();
+
+const normalizeFamilyName = (rawFamily: string): string => {
+  const key = rawFamily.trim().toLowerCase();
+  const aliases: Record<string, string> = {
+    slime: 'Slime',
+    dragon: 'Dragon',
+    beast: 'Beast',
+    bird: 'Bird',
+    plant: 'Plant',
+    bug: 'Bug',
+    devil: 'Devil',
+    demon: 'Devil',
+    undead: 'Undead',
+    zombie: 'Undead',
+    material: 'Material',
+    water: 'Water',
+    boss: 'Boss',
+    '????': 'Boss'
+  };
+  return aliases[key] || `${key.charAt(0).toUpperCase()}${key.slice(1)}`;
+};
 
 const readNumberAttribute = (element: Element, name: string, fallback = 0): number => {
   const raw = element.getAttribute(name);
@@ -156,91 +184,94 @@ export const loadMonstersFromCSV = async (): Promise<Monster[]> => {
 
 export const loadBreedingPairsFromCSV = async (): Promise<BreedingPair[]> => {
   const breedingPairs: BreedingPair[] = [];
-  
+
   try {
-    const response = await fetch(getDataUrl('breeding_pairs.csv'));
-    const csvText = await response.text();
-    
-    // Parse CSV lines
-    const lines = csvText.split('\n').filter(line => line.trim() !== '');
-    
-    // Skip header line
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (line) {
-        // Parse CSV line (handle commas in names)
-        const parts = line.split(',').map(part => part.trim());
-        
-        if (parts.length >= 3) {
-          const result = parts[0];
-          const parent1 = parts[1];
-          const parent2 = parts[2];
-          
-          // Convert names to IDs
-          const resultId = result.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
-          
-          // Handle "Any Family" placeholders
-          const parent1Combinations = await expandFamilyPlaceholder(parent1);
-          const parent2Combinations = await expandFamilyPlaceholder(parent2);
-          
-          console.log(`Expanding ${parent1} -> ${parent1Combinations.length} options`);
-          console.log(`Expanding ${parent2} -> ${parent2Combinations.length} options`);
-          
-          // Create combinations for all expanded parents
-          for (const p1 of parent1Combinations) {
-            for (const p2 of parent2Combinations) {
-              const parent1Id = p1.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
-              const parent2Id = p2.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
-              
-              breedingPairs.push({
-                parent1: parent1Id,
-                parent2: parent2Id,
-                result: resultId
-              });
-            }
-          }
+    const rawPairs = await loadRawBreedingPairsFromCSV();
+    for (const pair of rawPairs) {
+      const resultId = normalizeId(pair.result);
+      const parent1Combinations = await expandFamilyPlaceholder(pair.parent1);
+      const parent2Combinations = await expandFamilyPlaceholder(pair.parent2);
+
+      for (const p1 of parent1Combinations) {
+        for (const p2 of parent2Combinations) {
+          breedingPairs.push({
+            parent1: normalizeId(p1),
+            parent2: normalizeId(p2),
+            result: resultId
+          });
         }
       }
     }
-    
-    console.log(`Total breeding pairs generated: ${breedingPairs.length}`);
   } catch (error) {
-    console.error('Error loading breeding_pairs.csv:', error);
+    console.error('Error generating breeding pairs from XML:', error);
   }
-  
+
   return breedingPairs;
 };
 
 export const loadRawBreedingPairsFromCSV = async (): Promise<RawBreedingPair[]> => {
+  if (rawBreedingPairsCache) {
+    return rawBreedingPairsCache;
+  }
+
   const rawPairs: RawBreedingPair[] = [];
 
   try {
-    const response = await fetch(getDataUrl('breeding_pairs.csv'));
-    const csvText = await response.text();
-    const lines = csvText.split('\n').filter(line => line.trim() !== '');
-
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (!line) {
-        continue;
-      }
-
-      const parts = line.split(',').map(part => part.trim());
-      if (parts.length < 3) {
-        continue;
-      }
-
-      const result = parts[0];
-      const parent1 = parts[1];
-      const parent2 = parts[2];
-      if (!result || !parent1 || !parent2) {
-        continue;
-      }
-
-      rawPairs.push({ result, parent1, parent2 });
+    const response = await fetch(getDataUrl('monster-data.xml'));
+    if (!response.ok) {
+      rawBreedingPairsCache = [];
+      return rawPairs;
     }
+    const xmlText = await response.text();
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(xmlText, 'application/xml');
+    if (xmlDoc.querySelector('parsererror')) {
+      console.error('Failed parsing monster-data.xml for breeding pairs');
+      rawBreedingPairsCache = [];
+      return rawPairs;
+    }
+
+    const breedNodes = Array.from(xmlDoc.getElementsByTagName('breed'));
+    breedNodes.forEach((breedNode) => {
+      const result = (breedNode.getAttribute('target') || '').trim();
+      if (!result) {
+        return;
+      }
+
+      const readRequirements = (containerTag: 'base' | 'mate'): string[] => {
+        const container = breedNode.getElementsByTagName(containerTag)[0];
+        if (!container) {
+          return [];
+        }
+
+        return Array.from(container.getElementsByTagName('breed-requirement'))
+          .map((reqNode) => {
+            const monster = (reqNode.getAttribute('monster') || '').trim();
+            if (monster) {
+              return monster;
+            }
+            const family = (reqNode.getAttribute('family') || '').trim();
+            if (family) {
+              return `Any ${normalizeFamilyName(family)}`;
+            }
+            return '';
+          })
+          .filter(Boolean);
+      };
+
+      const bases = readRequirements('base');
+      const mates = readRequirements('mate');
+
+      bases.forEach((parent1) => {
+        mates.forEach((parent2) => {
+          rawPairs.push({ result, parent1, parent2 });
+        });
+      });
+    });
+
+    rawBreedingPairsCache = rawPairs;
   } catch (error) {
-    console.error('Error loading raw breeding_pairs.csv:', error);
+    console.error('Error loading raw breeding pairs from monster-data.xml:', error);
   }
 
   return rawPairs;

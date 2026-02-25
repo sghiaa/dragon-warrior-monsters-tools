@@ -145,6 +145,35 @@ body {
   margin-left: 0.35rem;
 }
 
+.stable-plan-dot {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 999px;
+  display: inline-block;
+  margin-left: 0.35rem;
+  border: 1px solid rgba(34, 46, 75, 0.2);
+}
+
+.stable-plan-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 0.15rem 0 0.75rem;
+}
+
+.stable-plan-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #f7f9fd;
+  border: 1px solid #dde5f2;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  color: #3d4f70;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
 .stable-family-pill.family-slime {
   background: #eaf9ff;
   border-color: #86ccee;
@@ -626,6 +655,84 @@ body {
   margin-top: 1rem;
 }
 
+.move-selected-panel {
+  background: #f5f8ff;
+  border: 1px solid #d0dcf3;
+  border-radius: 12px;
+  padding: 0.75rem 0.85rem;
+  margin-bottom: 0.85rem;
+}
+
+.move-selected-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  color: #314a77;
+}
+
+.goal-selected-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.goal-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid #9bb8e4;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  background: #e9f1ff;
+  color: #24477c;
+  font-weight: 700;
+}
+
+.goal-chip-remove {
+  border: none;
+  background: transparent;
+  color: #24477c;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.move-requirements-list {
+  display: grid;
+  gap: 0.45rem;
+  margin-bottom: 0.75rem;
+}
+
+.move-requirement-item {
+  border: 1px solid #d7e0f1;
+  border-radius: 8px;
+  background: #fbfcff;
+  padding: 0.45rem 0.6rem;
+  display: grid;
+  gap: 0.15rem;
+}
+
+.move-requirement-item strong {
+  color: #2d466f;
+}
+
+.move-summary-grid {
+  display: grid;
+  gap: 0.45rem;
+  margin-bottom: 0.6rem;
+}
+
+.move-summary-row {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.move-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
 .clear-goal {
   background: #f44336;
   color: white;
@@ -908,6 +1015,41 @@ body {
   border-collapse: collapse;
 }
 
+.monster-growth-chart {
+  margin-bottom: 0.75rem;
+}
+
+.monster-growth-chart svg {
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  display: block;
+  margin: 0 auto 0.5rem;
+}
+
+.growth-ring {
+  fill: none;
+  stroke: #d6deeb;
+  stroke-width: 1;
+}
+
+.growth-axis {
+  stroke: #d6deeb;
+  stroke-width: 1;
+}
+
+.growth-shape {
+  fill: rgba(65, 125, 255, 0.28);
+  stroke: #2f62d5;
+  stroke-width: 2;
+}
+
+.growth-label {
+  font-size: 11px;
+  font-weight: 600;
+  fill: #44516c;
+}
+
 .monster-detail-card th,
 .monster-detail-card td {
   text-align: left;
@@ -917,6 +1059,98 @@ body {
 
 .monster-detail-card ul {
   padding-left: 1.1rem;
+}
+
+.monster-breeding-pairs {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.monster-breeding-pair-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  border: 1px solid #e1e7f2;
+  border-radius: 8px;
+  padding: 0.45rem 0.6rem;
+  background: #f9fbff;
+  flex-wrap: wrap;
+}
+
+.monster-breeding-parent {
+  font-weight: 600;
+  color: #2b3f64;
+}
+
+.monster-breeding-plus {
+  color: #6b7a97;
+  font-weight: 700;
+}
+
+.family-index {
+  display: grid;
+  gap: 1rem;
+}
+
+.family-selector-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.family-selector-btn {
+  border: 1px solid #b8c7e2;
+  border-radius: 999px;
+  background: #eef3fb;
+  color: #2f466f;
+  padding: 0.35rem 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.family-selector-btn.active {
+  border-color: #7398d8;
+  background: #dce9fb;
+  color: #1f3760;
+}
+
+.family-ranking-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.family-ranking-card {
+  border: 1px solid #d8dfeb;
+  border-radius: 10px;
+  background: #fff;
+  padding: 0.8rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.family-ranking-header {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.family-ranking-rank {
+  color: #5b6780;
+  font-weight: 700;
+}
+
+.family-ranking-total {
+  color: #2b3d61;
+  font-weight: 700;
+}
+
+.family-stats-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  color: #4a5875;
+  font-weight: 600;
 }
 
 .plan-tree {

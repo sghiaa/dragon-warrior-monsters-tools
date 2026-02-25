@@ -134,7 +134,8 @@ export const MovePlanner: React.FC<MovePlannerProps> = ({ userMonsters, stableSt
       </p>
 
       {selectedMoves.length > 0 && (
-        <div className="goal-selector-panel">
+        <div className="goal-selector-panel move-selected-panel">
+          <h3 className="move-selected-title">Selected Moves</h3>
           <div className="goal-selected-chips">
             {selectedMoves.map((move) => (
               <span key={`selected-move-${move}`} className="goal-chip">
@@ -197,13 +198,16 @@ export const MovePlanner: React.FC<MovePlannerProps> = ({ userMonsters, stableSt
       {selectedMoves.length > 0 && isDirectOnlySelection && (
         <div className="stable-add-panel">
           <h3>Monsters That Learn Selected Moves</h3>
-          {selectedRequirementParts.map((entry) =>
-            entry.text ? (
-              <p key={`req-${entry.move}`}>
-                <strong>{entry.move} requirements:</strong> {entry.text}
-              </p>
-            ) : null
-          )}
+          <div className="move-requirements-list">
+            {selectedRequirementParts.map((entry) =>
+              entry.text ? (
+                <div key={`req-${entry.move}`} className="move-requirement-item">
+                  <strong>{entry.move}</strong>
+                  <span>{entry.text}</span>
+                </div>
+              ) : null
+            )}
+          </div>
           {directMoveLearners.length === 0 ? (
             <p className="tree-help">No monsters in the loaded dataset have this move listed.</p>
           ) : (
@@ -230,24 +234,46 @@ export const MovePlanner: React.FC<MovePlannerProps> = ({ userMonsters, stableSt
       {selectedMoves.length > 0 && movePlan && !isDirectOnlySelection && (
         <div className="stable-add-panel">
           <h3>Suggested Path for Selected Moves</h3>
-          {selectedRequirementParts.map((entry) =>
-            entry.text ? (
-              <p key={`req-${entry.move}`}>
-                <strong>{entry.move} requirements:</strong> {entry.text}
-              </p>
-            ) : null
-          )}
-          <p>
-            <strong>Selected moves:</strong> {selectedMoves.join(', ')}
-          </p>
-          <p>
-            <strong>Required moves:</strong>{' '}
-            {movePlan.requiredSkills.length > 0 ? movePlan.requiredSkills.join(', ') : 'None'}
-          </p>
-          <p>
-            <strong>Selected monsters:</strong>{' '}
-            {movePlan.selectedMonsters.length > 0 ? movePlan.selectedMonsters.length : 'None'}
-          </p>
+          <div className="move-requirements-list">
+            {selectedRequirementParts.map((entry) =>
+              entry.text ? (
+                <div key={`req-${entry.move}`} className="move-requirement-item">
+                  <strong>{entry.move}</strong>
+                  <span>{entry.text}</span>
+                </div>
+              ) : null
+            )}
+          </div>
+          <div className="move-summary-grid">
+            <div className="move-summary-row">
+              <strong>Selected moves</strong>
+              <div className="move-pill-row">
+                {selectedMoves.map((move) => (
+                  <span key={`selected-summary-${move}`} className="stable-family-pill family-water">
+                    {move}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="move-summary-row">
+              <strong>Required moves</strong>
+              <div className="move-pill-row">
+                {movePlan.requiredSkills.length > 0 ? (
+                  movePlan.requiredSkills.map((move) => (
+                    <span key={`required-summary-${move}`} className="stable-family-pill family-material">
+                      {move}
+                    </span>
+                  ))
+                ) : (
+                  <span className="combobox-meta">None</span>
+                )}
+              </div>
+            </div>
+            <div className="move-summary-row">
+              <strong>Selected monsters</strong>
+              <span>{movePlan.selectedMonsters.length > 0 ? movePlan.selectedMonsters.length : 'None'}</span>
+            </div>
+          </div>
           {movePlan.uncoveredSkills.length > 0 && (
             <p className="tree-help">
               Uncovered moves with current reachable monsters: {movePlan.uncoveredSkills.join(', ')}

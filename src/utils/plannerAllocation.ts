@@ -1,4 +1,4 @@
-import { getMonsterById } from '../data/monsters';
+import { getBreedingResult, getMonsterById } from '../data/monsters';
 import { BreedingPlan, BreedingTreeNode, Gender, OwnedMonster, UserMonster } from '../types/monster';
 
 interface MonsterSlot {
@@ -12,9 +12,12 @@ interface MonsterSlot {
 interface FamilySlot {
   goalId: string;
   path: string;
+  parentPath: string | null;
   depth: number;
   family: string;
   siblingPath: string | null;
+  siblingSpeciesId: string | null;
+  parentResultSpeciesId: string | null;
 }
 
 export interface GoalAutoAssignment {
@@ -61,7 +64,8 @@ const collectSlots = (
   path: string,
   depth: number,
   monsterSlots: MonsterSlot[],
-  familySlots: FamilySlot[]
+  familySlots: FamilySlot[],
+  parentNode?: BreedingTreeNode
 ) => {
   if (!node) {
     return;
@@ -85,14 +89,27 @@ const collectSlots = (
       : path.endsWith('.R')
         ? `${path.slice(0, -2)}.L`
         : null;
-    familySlots.push({ goalId, path, depth, family, siblingPath });
+    const parentPath = path.endsWith('.L') || path.endsWith('.R')
+      ? path.slice(0, -2)
+      : null;
+    const siblingNode = path.endsWith('.L') ? parentNode?.right : path.endsWith('.R') ? parentNode?.left : undefined;
+    familySlots.push({
+      goalId,
+      path,
+      parentPath,
+      depth,
+      family,
+      siblingPath,
+      siblingSpeciesId: siblingNode?.kind === 'monster' ? siblingNode.value : null,
+      parentResultSpeciesId: parentNode?.kind === 'monster' ? parentNode.value : null
+    });
   }
 
   if (node.left) {
-    collectSlots(goalId, node.left, `${path}.L`, depth + 1, monsterSlots, familySlots);
+    collectSlots(goalId, node.left, `${path}.L`, depth + 1, monsterSlots, familySlots, node);
   }
   if (node.right) {
-    collectSlots(goalId, node.right, `${path}.R`, depth + 1, monsterSlots, familySlots);
+    collectSlots(goalId, node.right, `${path}.R`, depth + 1, monsterSlots, familySlots, node);
   }
 };
 
@@ -203,6 +220,17 @@ export const computeAutoAssignments = (
     return siblingGender !== owned.gender;
   };
 
+  const isCandidateSafeForFamilySlot = (slot: FamilySlot, owned: OwnedMonster) => {
+    // If this family slot doesn't have a concrete sibling species and target result species,
+    // we cannot validate a concrete pair override; allow assignment.
+    if (!slot.siblingSpeciesId || !slot.parentResultSpeciesId) {
+      return true;
+    }
+
+    const pairResult = getBreedingResult(owned.monsterId, slot.siblingSpeciesId);
+    return !!pairResult && pairResult.result === slot.parentResultSpeciesId;
+  };
+
   const sortedExactSlots = monsterSlots
     .slice()
     .sort((a, b) => {
@@ -243,6 +271,84 @@ export const computeAutoAssignments = (
       return (goalOrder.get(a.goalId) || 0) - (goalOrder.get(b.goalId) || 0);
     });
 
+  const slotByPath = new Map(sortedFamilySlots.map((slot) => [slot.path, slot]));
+  const processedPairParents = new Set<string>();
+
+  // Pass 2a: for sibling family slots under a concrete monster result, assign both slots together
+  // only if the chosen pair actually breeds to that immediate parent result.
+  for (const slot of sortedFamilySlots) {
+    if (!slot.parentPath || !slot.siblingPath || processedPairParents.has(slot.parentPath)) {
+      continue;
+    }
+
+    const siblingSlot = slotByPath.get(slot.siblingPath);
+    if (!siblingSlot || siblingSlot.parentPath !== slot.parentPath) {
+      continue;
+    }
+    if (!slot.parentResultSpeciesId || slot.parentResultSpeciesId !== siblingSlot.parentResultSpeciesId) {
+      continue;
+    }
+
+    if (!isSlotAvailable(slot.goalId, slot.path) || !isSlotAvailable(siblingSlot.goalId, siblingSlot.path)) {
+      processedPairParents.add(slot.parentPath);
+      continue;
+    }
+
+    const candidatesFor = (candidateSlot: FamilySlot) =>
+      ownedMonsters
+        .filter((owned) => {
+          if (usedOwnedIds.has(owned.id)) {
+            return false;
+          }
+          const monster = getMonsterById(owned.monsterId);
+          return !!monster && monster.family === candidateSlot.family;
+        })
+        .sort((a, b) => {
+          const rankA = getMonsterById(a.monsterId)?.rank || 0;
+          const rankB = getMonsterById(b.monsterId)?.rank || 0;
+          if (rankA !== rankB) {
+            return rankB - rankA;
+          }
+          return a.monsterId.localeCompare(b.monsterId);
+        });
+
+    const slotCandidates = candidatesFor(slot);
+    const siblingCandidates = candidatesFor(siblingSlot);
+    let best:
+      | {
+          left: OwnedMonster;
+          right: OwnedMonster;
+          score: number;
+        }
+      | null = null;
+
+    for (const left of slotCandidates) {
+      for (const right of siblingCandidates) {
+        if (left.id === right.id) {
+          continue;
+        }
+        if (left.gender === right.gender) {
+          continue;
+        }
+        const pairResult = getBreedingResult(left.monsterId, right.monsterId);
+        if (!pairResult || pairResult.result !== slot.parentResultSpeciesId) {
+          continue;
+        }
+        const score = (getMonsterById(left.monsterId)?.rank || 0) + (getMonsterById(right.monsterId)?.rank || 0);
+        if (!best || score > best.score) {
+          best = { left, right, score };
+        }
+      }
+    }
+
+    if (best) {
+      assign(slot.goalId, slot.path, best.left, 'family');
+      assign(siblingSlot.goalId, siblingSlot.path, best.right, 'family');
+    }
+
+    processedPairParents.add(slot.parentPath);
+  }
+
   // Pass 2: walk family slots top-down and fill each with the highest-rank available family match.
   for (const slot of sortedFamilySlots) {
     if (!isSlotAvailable(slot.goalId, slot.path)) {
@@ -257,7 +363,8 @@ export const computeAutoAssignments = (
         const monster = getMonsterById(owned.monsterId);
         return !!monster &&
           monster.family === slot.family &&
-          isGenderCompatible(slot.goalId, slot.path, owned);
+          isGenderCompatible(slot.goalId, slot.path, owned) &&
+          isCandidateSafeForFamilySlot(slot, owned);
       })
       .sort((a, b) => {
         const monsterA = getMonsterById(a.monsterId);
