@@ -98,6 +98,14 @@ export const MovePlanner: React.FC<MovePlannerProps> = ({ userMonsters, stableSt
       return a.monsterName.localeCompare(b.monsterName);
     });
   }, [isDirectOnlySelection, selectedDirectMoves, stableStepCounts]);
+  const nativeLearnersByMove = useMemo(
+    () =>
+      selectedMoves.map((moveName) => ({
+        moveName,
+        learners: getMonstersWithMove(moveName, MONSTERS, stableStepCounts)
+      })),
+    [selectedMoves, stableStepCounts]
+  );
 
   const selectedRequirementParts = useMemo(
     () =>
@@ -224,6 +232,43 @@ export const MovePlanner: React.FC<MovePlannerProps> = ({ userMonsters, stableSt
                       {learner.stepCount >= 0 ? `Breeding steps: ${learner.stepCount}` : 'Breeding steps: Unknown'}
                     </span>
                   </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {selectedMoves.length > 0 && (
+        <div className="stable-add-panel">
+          <h3>Monsters That Natively Learn Selected Moves</h3>
+          {nativeLearnersByMove.every((entry) => entry.learners.length === 0) ? (
+            <p className="tree-help">No monsters in the loaded dataset have the selected move(s) listed.</p>
+          ) : (
+            <div className="move-native-groups">
+              {nativeLearnersByMove.map((entry) => (
+                <div key={`native-${entry.moveName}`} className="move-native-group" data-testid={`native-move-${entry.moveName}`}>
+                  <h4>{entry.moveName}</h4>
+                  {entry.learners.length === 0 ? (
+                    <p className="tree-help">No monsters have this move listed natively.</p>
+                  ) : (
+                    <div className="keys-grid">
+                      {entry.learners.map((learner) => (
+                        <div key={`native-learner-${entry.moveName}-${learner.monsterId}`} className="key-card suggestion-card">
+                          <div className="key-card-main">
+                            <strong>
+                              <a href={`#monster/${learner.monsterId}`} className="monster-link">
+                                {learner.monsterName}
+                              </a>
+                            </strong>
+                            <span className="combobox-meta">
+                              {learner.stepCount >= 0 ? `Breeding steps: ${learner.stepCount}` : 'Breeding steps: Unknown'}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
