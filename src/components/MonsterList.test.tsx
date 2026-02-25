@@ -138,14 +138,7 @@ describe('MonsterList key family highlighting', () => {
 
     const suggestionCards = screen.getAllByText(/Matches \d+ needed monster/);
     expect(suggestionCards).toHaveLength(1);
-    const greenMineInSuggestion = screen
-      .getAllByText('Green Mine')
-      .find((node) => node.closest('.suggestion-card'));
-    const blueLakeInSuggestion = screen
-      .getAllByText('Blue Lake')
-      .find((node) => node.closest('.suggestion-card'));
-
-    expect(greenMineInSuggestion).toBeTruthy();
-    expect(blueLakeInSuggestion).toBeUndefined();
+    expect(screen.getByTestId('key-suggestion-k1')).toHaveTextContent('Green Mine');
+    expect(screen.queryByTestId('key-suggestion-k2')).not.toBeInTheDocument();
   });
 });

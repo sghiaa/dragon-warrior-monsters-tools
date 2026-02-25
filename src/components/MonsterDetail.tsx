@@ -29,7 +29,7 @@ export const MonsterDetail: React.FC<MonsterDetailProps> = ({ monsterId, onBack 
 
   if (!monster) {
     return (
-      <div className="stable-add-panel">
+      <div className="stable-add-panel" data-testid="monster-detail-view">
         <button type="button" className="pin-to-planner" onClick={onBack}>
           <ArrowLeft size={16} />
           Back
@@ -83,7 +83,7 @@ export const MonsterDetail: React.FC<MonsterDetailProps> = ({ monsterId, onBack 
     .join(' ');
 
   return (
-    <div className="stable-add-panel monster-detail-page">
+    <div className="stable-add-panel monster-detail-page" data-testid="monster-detail-view">
       <button type="button" className="pin-to-planner" onClick={onBack}>
         <ArrowLeft size={16} />
         Back

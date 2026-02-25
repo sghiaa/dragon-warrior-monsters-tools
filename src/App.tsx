@@ -277,6 +277,14 @@ function App() {
     setActiveTab('planner');
   };
 
+  const handleTabChange = (nextTab: 'collection' | 'possibilities' | 'families' | 'planner' | 'unlimited' | 'moves') => {
+    if (window.location.hash.startsWith('#monster/')) {
+      window.location.hash = '';
+      setMonsterDetailId(null);
+    }
+    setActiveTab(nextTab);
+  };
+
   return (
     <div className="App">
       <header className="app-header">
@@ -294,37 +302,37 @@ function App() {
           <div className="app-tabs">
             <button
               className={`tab ${activeTab === 'collection' ? 'active' : ''}`}
-              onClick={() => setActiveTab('collection')}
+              onClick={() => handleTabChange('collection')}
             >
               My Collection
             </button>
             <button
               className={`tab ${activeTab === 'possibilities' ? 'active' : ''}`}
-              onClick={() => setActiveTab('possibilities')}
+              onClick={() => handleTabChange('possibilities')}
             >
               Breeding Possibilities
             </button>
             <button
               className={`tab ${activeTab === 'families' ? 'active' : ''}`}
-              onClick={() => setActiveTab('families')}
+              onClick={() => handleTabChange('families')}
             >
               Family Index
             </button>
             <button
               className={`tab ${activeTab === 'planner' ? 'active' : ''}`}
-              onClick={() => setActiveTab('planner')}
+              onClick={() => handleTabChange('planner')}
             >
               Goal Planner
             </button>
             <button
               className={`tab ${activeTab === 'unlimited' ? 'active' : ''}`}
-              onClick={() => setActiveTab('unlimited')}
+              onClick={() => handleTabChange('unlimited')}
             >
               Unlimited Breeding
             </button>
             <button
               className={`tab ${activeTab === 'moves' ? 'active' : ''}`}
-              onClick={() => setActiveTab('moves')}
+              onClick={() => handleTabChange('moves')}
             >
               Move Planner
             </button>

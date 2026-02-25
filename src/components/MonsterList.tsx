@@ -644,7 +644,11 @@ export const MonsterList: React.FC<MonsterListProps> = ({
             ) : (
               <div className="keys-grid">
                 {keySuggestions.map((suggestion) => (
-                  <div key={`suggestion-${suggestion.id}`} className="key-card suggestion-card">
+                  <div
+                    key={`suggestion-${suggestion.id}`}
+                    className="key-card suggestion-card"
+                    data-testid={`key-suggestion-${suggestion.id}`}
+                  >
                     <div className="key-card-main">
                       <strong>{suggestion.descriptor} {suggestion.family}</strong>
                       <span className="combobox-meta">
@@ -679,6 +683,7 @@ export const MonsterList: React.FC<MonsterListProps> = ({
                 <div
                   key={ownedKey.id}
                   className={`key-card ${selectedKeyFamilyHighlight ? (isHighlighted ? 'highlighted' : 'dimmed') : ''}`}
+                  data-testid={`owned-key-card-${ownedKey.id}`}
                 >
                   <div className="key-card-main">
                     <strong>{ownedKey.descriptor} {ownedKey.family}</strong>
