@@ -12,6 +12,7 @@ import { BreedingPlan as BreedingPlanType, OwnedKey, OwnedMonster } from './type
 import { canonicalMonsterId, initializeData, MONSTERS } from './data/monsters';
 import { BreedingPathfinder } from './utils/breedingPathfinder';
 import { computeAutoAssignments, deriveUserMonstersFromOwned } from './utils/plannerAllocation';
+import { exportShareState, importShareState } from './utils/shareState';
 import './App.css';
 
 function App() {
@@ -26,6 +27,8 @@ function App() {
   const [goalStepCounts, setGoalStepCounts] = useState<Record<string, number>>({});
   const [dataLoaded, setDataLoaded] = useState(false);
   const [monsterDetailId, setMonsterDetailId] = useState<string | null>(null);
+  const [shareText, setShareText] = useState<string>('');
+  const [shareError, setShareError] = useState<string | null>(null);
   const plannerSeedKey = (plannerSeedMonsterIds || []).slice().sort().join(',');
   const isPlannerTabActive = activeTab === 'planner';
   const userMonsters = useMemo(() => deriveUserMonstersFromOwned(ownedMonsters), [ownedMonsters]);
@@ -293,6 +296,39 @@ function App() {
     setActiveTab('planner');
   };
 
+  const handleExportShare = () => {
+    const encoded = exportShareState({
+      ownedMonsters,
+      selectedGoals,
+      plannerSeedMonsterIds
+    });
+    setShareText(encoded);
+    setShareError(null);
+  };
+
+  const handleImportShare = () => {
+    const imported = importShareState(shareText);
+    if (!imported.ok || !imported.value) {
+      setShareError(imported.error || 'Invalid share string.');
+      return;
+    }
+
+    setOwnedMonsters(
+      imported.value.ownedMonsters.map((owned) => ({
+        ...owned,
+        monsterId: canonicalMonsterId(owned.monsterId),
+        nickname: owned.isEgg ? 'Egg' : owned.nickname
+      }))
+    );
+    setSelectedGoals(imported.value.selectedGoals.map((goalId) => canonicalMonsterId(goalId)));
+    setPlannerSeedMonsterIds(
+      imported.value.plannerSeedMonsterIds
+        ? imported.value.plannerSeedMonsterIds.map((monsterId) => canonicalMonsterId(monsterId))
+        : null
+    );
+    setShareError(null);
+  };
+
   const handleTabChange = (nextTab: 'collection' | 'possibilities' | 'families' | 'planner' | 'unlimited' | 'moves') => {
     if (window.location.hash.startsWith('#monster/')) {
       window.location.hash = '';
@@ -365,22 +401,56 @@ function App() {
             ) : (
               <>
                 {activeTab === 'collection' && (
-                  <MonsterList
-                    ownedMonsters={ownedMonsters}
-                    ownedKeys={ownedKeys}
-                    ownedStoryKeyWorlds={ownedStoryKeyWorlds}
-                    selectedGoals={selectedGoals}
-                    breedingPlans={breedingPlans}
-                    plannerSeedMonsterIds={plannerSeedMonsterIds}
-                    monsterStepCounts={stableStepCounts}
-                    onOwnedMonsterAdd={handleOwnedMonsterAdd}
-                    onOwnedMonsterRemove={handleOwnedMonsterRemove}
-                    onOwnedMonsterGenderChange={handleOwnedMonsterGenderChange}
-                    onOwnedMonsterHatch={handleOwnedMonsterHatch}
-                    onOwnedKeyAdd={handleOwnedKeyAdd}
-                    onOwnedKeyRemove={handleOwnedKeyRemove}
-                    onToggleOwnedStoryKeyWorld={handleToggleOwnedStoryKeyWorld}
-                  />
+                  <>
+                    <div className="stable-add-panel">
+                      <h3>Share Stable + Goals</h3>
+                      <p className="tree-help">
+                        Export your stable and goal selection as a string, then import it on another instance.
+                      </p>
+                      <div className="add-form-grid">
+                        <textarea
+                          className="search-input"
+                          value={shareText}
+                          onChange={(e) => setShareText(e.target.value)}
+                          placeholder="Share string..."
+                          rows={3}
+                        />
+                        <button
+                          type="button"
+                          className="add-stable-btn"
+                          onClick={handleExportShare}
+                        >
+                          Export Share
+                        </button>
+                        <button
+                          type="button"
+                          className="add-stable-btn"
+                          onClick={handleImportShare}
+                        >
+                          Import Share
+                        </button>
+                      </div>
+                      {shareError && (
+                        <p className="tree-help" role="alert">{shareError}</p>
+                      )}
+                    </div>
+                    <MonsterList
+                      ownedMonsters={ownedMonsters}
+                      ownedKeys={ownedKeys}
+                      ownedStoryKeyWorlds={ownedStoryKeyWorlds}
+                      selectedGoals={selectedGoals}
+                      breedingPlans={breedingPlans}
+                      plannerSeedMonsterIds={plannerSeedMonsterIds}
+                      monsterStepCounts={stableStepCounts}
+                      onOwnedMonsterAdd={handleOwnedMonsterAdd}
+                      onOwnedMonsterRemove={handleOwnedMonsterRemove}
+                      onOwnedMonsterGenderChange={handleOwnedMonsterGenderChange}
+                      onOwnedMonsterHatch={handleOwnedMonsterHatch}
+                      onOwnedKeyAdd={handleOwnedKeyAdd}
+                      onOwnedKeyRemove={handleOwnedKeyRemove}
+                      onToggleOwnedStoryKeyWorld={handleToggleOwnedStoryKeyWorld}
+                    />
+                  </>
                 )}
 
                 {activeTab === 'possibilities' && (

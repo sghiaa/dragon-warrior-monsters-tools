@@ -57,3 +57,14 @@ test('tab switch clears monster hash', async () => {
     expect(window.location.hash.startsWith('#monster/')).toBe(false);
   });
 });
+
+test('shows share export and import controls', async () => {
+  render(<App />);
+
+  await waitFor(() => {
+    expect(screen.getByRole('button', { name: 'My Collection' })).toBeInTheDocument();
+  });
+
+  expect(screen.getByRole('button', { name: 'Export Share' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Import Share' })).toBeInTheDocument();
+});
