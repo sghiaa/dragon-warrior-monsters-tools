@@ -4,8 +4,26 @@ import { MonsterList } from './MonsterList';
 import { loadPlannerProgress } from '../utils/storage';
 
 jest.mock('../data/monsters', () => ({
-  MONSTERS: [],
-  getMonsterById: () => undefined
+  MONSTERS: [
+    { id: 'pizzaro', name: 'Pizzaro', family: 'Boss' }
+  ],
+  getMonsterById: (id: string) => {
+    if (id === 'pizzaro') {
+      return {
+        id: 'pizzaro',
+        name: 'Pizzaro',
+        family: 'Boss',
+        rank: 1,
+        hpGrowth: 1,
+        mpGrowth: 1,
+        attackGrowth: 1,
+        defenseGrowth: 1,
+        agilityGrowth: 1,
+        intelligenceGrowth: 1
+      };
+    }
+    return undefined;
+  }
 }));
 
 jest.mock('../utils/storage', () => ({
@@ -30,6 +48,7 @@ describe('MonsterList key family highlighting', () => {
     onOwnedMonsterAdd: jest.fn(),
     onOwnedMonsterRemove: jest.fn(),
     onOwnedMonsterGenderChange: jest.fn(),
+    onOwnedMonsterHatch: jest.fn(),
     onOwnedKeyAdd: jest.fn(),
     onOwnedKeyRemove: jest.fn(),
     onToggleOwnedStoryKeyWorld: jest.fn()
@@ -140,5 +159,48 @@ describe('MonsterList key family highlighting', () => {
     expect(suggestionCards).toHaveLength(1);
     expect(screen.getByTestId('key-suggestion-k1')).toHaveTextContent('Green Mine');
     expect(screen.queryByTestId('key-suggestion-k2')).not.toBeInTheDocument();
+  });
+
+  it('shows eggs in stable and allows hatching to a selected gender', () => {
+    const onOwnedMonsterHatch = jest.fn();
+    render(
+      <MonsterList
+        {...baseProps}
+        onOwnedMonsterHatch={onOwnedMonsterHatch}
+        ownedMonsters={[
+          { id: 'egg-1', monsterId: 'pizzaro', gender: 'male', nickname: 'Egg', isEgg: true }
+        ]}
+        ownedKeys={[]}
+      />
+    );
+
+    expect(screen.getByText('Eggs (1)')).toBeInTheDocument();
+    expect(screen.getByText('[Egg]')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hatch Male' }));
+    expect(onOwnedMonsterHatch).toHaveBeenCalledWith('egg-1', 'male');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hatch Female' }));
+    expect(onOwnedMonsterHatch).toHaveBeenCalledWith('egg-1', 'female');
+  });
+
+  it('allows adding a monster as an egg from the add form', () => {
+    const onOwnedMonsterAdd = jest.fn();
+    render(
+      <MonsterList
+        {...baseProps}
+        onOwnedMonsterAdd={onOwnedMonsterAdd}
+        ownedMonsters={[]}
+        ownedKeys={[]}
+      />
+    );
+
+    fireEvent.change(screen.getByPlaceholderText('Choose species...'), {
+      target: { value: 'Pizzaro' }
+    });
+    fireEvent.click(screen.getByLabelText('Add as Egg'));
+    fireEvent.click(screen.getByRole('button', { name: 'Add to Stable' }));
+
+    expect(onOwnedMonsterAdd).toHaveBeenCalledWith('pizzaro', 'male', 'Egg', true);
   });
 });

@@ -89,6 +89,18 @@ describe('deriveUserMonstersFromOwned', () => {
       { monsterId: 'pizzaro', count: 2, maleCount: 1, femaleCount: 1 }
     ]);
   });
+
+  it('counts eggs toward total but not male/female counts', () => {
+    const owned: OwnedMonster[] = [
+      { id: 'egg-1', monsterId: 'pizzaro', gender: 'male', nickname: 'Egg', isEgg: true },
+      { id: 'male-1', monsterId: 'pizzaro', gender: 'male', nickname: 'Pizza' }
+    ];
+
+    const derived = deriveUserMonstersFromOwned(owned);
+    expect(derived).toEqual([
+      { monsterId: 'pizzaro', count: 2, maleCount: 1, femaleCount: 0 }
+    ]);
+  });
 });
 
 describe('computeAutoAssignments', () => {
@@ -225,6 +237,65 @@ describe('computeAutoAssignments', () => {
     expect(assignments.goal_landowl.checkedNodes).not.toContain('root.R');
     expect(assignments.goal_landowl.checkedNodeGenders['root.L']).toBe('male');
     expect(assignments.goal_landowl.checkedNodeGenders['root.R']).toBe('female');
+  });
+
+  it('uses egg as exact match and collapses node without assigning gender by default', () => {
+    const selectedGoals = ['goal_egg_exact'];
+    const breedingPlans: Record<string, BreedingPlan> = {
+      goal_egg_exact: {
+        targetMonster: 'goal_egg_exact',
+        steps: [],
+        isPossible: true,
+        missingMonsters: [],
+        tree: {
+          kind: 'monster',
+          value: 'goal_egg_exact',
+          left: { kind: 'monster', value: 'pizzaro' },
+          right: { kind: 'family', value: 'Any Beast' }
+        }
+      }
+    };
+
+    const owned: OwnedMonster[] = [
+      { id: 'egg-pizzaro', monsterId: 'pizzaro', gender: 'male', nickname: 'Egg', isEgg: true }
+    ];
+
+    const assignments = computeAutoAssignments(selectedGoals, breedingPlans, owned);
+
+    expect(assignments.goal_egg_exact.checkedNodes).toContain('root.L');
+    expect(assignments.goal_egg_exact.checkedNodeNames['root.L']).toBe('Egg');
+    expect(assignments.goal_egg_exact.checkedNodeGenders['root.L']).toBeUndefined();
+  });
+
+  it('assigns expected gender to egg when sibling already implies pairing direction', () => {
+    const selectedGoals = ['goal_egg_pairing'];
+    const breedingPlans: Record<string, BreedingPlan> = {
+      goal_egg_pairing: {
+        targetMonster: 'goal_egg_pairing',
+        steps: [],
+        isPossible: true,
+        missingMonsters: [],
+        tree: {
+          kind: 'monster',
+          value: 'landowl',
+          left: { kind: 'monster', value: 'bullbird' },
+          right: { kind: 'family', value: 'Any Devil' }
+        }
+      }
+    };
+
+    const owned: OwnedMonster[] = [
+      { id: 'male-bullbird', monsterId: 'bullbird', gender: 'male', nickname: 'Bull' },
+      { id: 'egg-devil', monsterId: 'devila', gender: 'male', nickname: 'Egg', isEgg: true }
+    ];
+
+    const assignments = computeAutoAssignments(selectedGoals, breedingPlans, owned);
+
+    expect(assignments.goal_egg_pairing.checkedNodes).toContain('root.L');
+    expect(assignments.goal_egg_pairing.checkedNodes).toContain('root.R');
+    expect(assignments.goal_egg_pairing.checkedNodeGenders['root.L']).toBe('male');
+    expect(assignments.goal_egg_pairing.checkedNodeGenders['root.R']).toBe('female');
+    expect(assignments.goal_egg_pairing.checkedNodeNames['root.R']).toBe('Egg');
   });
 
   it('prioritizes exact-match placement by higher tree level over branch completion', () => {

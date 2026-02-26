@@ -46,6 +46,7 @@ export interface OwnedMonster {
   monsterId: string;
   gender: Gender;
   nickname: string;
+  isEgg?: boolean;
 }
 
 export interface OwnedKey {

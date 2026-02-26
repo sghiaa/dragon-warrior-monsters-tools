@@ -13,9 +13,10 @@ interface MonsterListProps {
   breedingPlans: Record<string, BreedingPlan>;
   plannerSeedMonsterIds: string[] | null;
   monsterStepCounts: Record<string, number>;
-  onOwnedMonsterAdd: (monsterId: string, gender: Gender, nickname: string) => void;
+  onOwnedMonsterAdd: (monsterId: string, gender: Gender, nickname: string, isEgg?: boolean) => void;
   onOwnedMonsterRemove: (ownedMonsterId: string) => void;
   onOwnedMonsterGenderChange: (ownedMonsterId: string, gender: Gender) => void;
+  onOwnedMonsterHatch: (ownedMonsterId: string, gender: Gender) => void;
   onOwnedKeyAdd: (descriptor: string, family: string) => void;
   onOwnedKeyRemove: (ownedKeyId: string) => void;
   onToggleOwnedStoryKeyWorld: (worldName: string) => void;
@@ -32,6 +33,7 @@ export const MonsterList: React.FC<MonsterListProps> = ({
   onOwnedMonsterAdd,
   onOwnedMonsterRemove,
   onOwnedMonsterGenderChange,
+  onOwnedMonsterHatch,
   onOwnedKeyAdd,
   onOwnedKeyRemove,
   onToggleOwnedStoryKeyWorld
@@ -40,6 +42,7 @@ export const MonsterList: React.FC<MonsterListProps> = ({
   const [selectedSpecies, setSelectedSpecies] = useState<string>('');
   const [isSpeciesMenuOpen, setIsSpeciesMenuOpen] = useState<boolean>(false);
   const [selectedGender, setSelectedGender] = useState<Gender>('male');
+  const [addAsEgg, setAddAsEgg] = useState<boolean>(false);
   const [nickname, setNickname] = useState<string>('');
   const [selectedKeyDescriptor, setSelectedKeyDescriptor] = useState<string>(KEY_DESCRIPTORS[0]);
   const [selectedKeyFamily, setSelectedKeyFamily] = useState<string>(KEY_FAMILY_OPTIONS[0].code);
@@ -72,11 +75,13 @@ export const MonsterList: React.FC<MonsterListProps> = ({
       return;
     }
 
-    onOwnedMonsterAdd(selectedSpecies, selectedGender, nickname);
+    const effectiveNickname = addAsEgg ? 'Egg' : nickname;
+    onOwnedMonsterAdd(selectedSpecies, selectedGender, effectiveNickname, addAsEgg);
     setNickname('');
     setSpeciesQuery('');
     setSelectedSpecies('');
     setIsSpeciesMenuOpen(false);
+    setAddAsEgg(false);
   };
 
   const handleAddKey = () => {
@@ -109,12 +114,16 @@ export const MonsterList: React.FC<MonsterListProps> = ({
     return nameA.localeCompare(nameB);
   }, [monsterStepCounts]);
 
+  const eggOwned = useMemo(
+    () => ownedMonsters.filter((owned) => owned.isEgg).sort(sortOwned),
+    [ownedMonsters, sortOwned]
+  );
   const maleOwned = useMemo(
-    () => ownedMonsters.filter((owned) => owned.gender === 'male').sort(sortOwned),
+    () => ownedMonsters.filter((owned) => !owned.isEgg && owned.gender === 'male').sort(sortOwned),
     [ownedMonsters, sortOwned]
   );
   const femaleOwned = useMemo(
-    () => ownedMonsters.filter((owned) => owned.gender === 'female').sort(sortOwned),
+    () => ownedMonsters.filter((owned) => !owned.isEgg && owned.gender === 'female').sort(sortOwned),
     [ownedMonsters, sortOwned]
   );
 
@@ -126,15 +135,16 @@ export const MonsterList: React.FC<MonsterListProps> = ({
     const planGoalId = planGoalByOwnedId.get(owned.id);
     const goalColor = planGoalId ? goalColorByGoalId.get(planGoalId) : null;
     const goalName = planGoalId ? (getMonsterById(planGoalId)?.name || planGoalId) : null;
+    const displayNickname = owned.isEgg ? 'Egg' : owned.nickname.trim();
     return (
-      <div key={owned.id} className={`tree-node monster state-${owned.gender}`}>
+      <div key={owned.id} className={`tree-node monster ${owned.isEgg ? 'state-baseline' : `state-${owned.gender}`}`}>
         <div className="tree-check">
           <a href={`#monster/${owned.monsterId}`} className="monster-link">
             {displayName}
           </a>
           <span className={`stable-family-pill ${familyClass}`}>{familyName}</span>
-          {owned.nickname.trim() && (
-            <span className="tree-assigned-name">[{owned.nickname.trim()}]</span>
+          {displayNickname && (
+            <span className="tree-assigned-name">[{displayNickname}]</span>
           )}
           {goalColor && (
             <span
@@ -144,30 +154,57 @@ export const MonsterList: React.FC<MonsterListProps> = ({
             />
           )}
         </div>
-        <div className="tree-gender-toggle">
-          <button
-            type="button"
-            className={owned.gender === 'male' ? 'active male' : 'male'}
-            onClick={() => onOwnedMonsterGenderChange(owned.id, 'male')}
-          >
-            Male
-          </button>
-          <button
-            type="button"
-            className={owned.gender === 'female' ? 'active female' : 'female'}
-            onClick={() => onOwnedMonsterGenderChange(owned.id, 'female')}
-          >
-            Female
-          </button>
-          <button
-            type="button"
-            className="stable-remove"
-            onClick={() => onOwnedMonsterRemove(owned.id)}
-            title="Remove from stable"
-          >
-            <Trash2 size={14} />
-          </button>
-        </div>
+        {owned.isEgg ? (
+          <div className="tree-gender-toggle">
+            <button
+              type="button"
+              className="male"
+              onClick={() => onOwnedMonsterHatch(owned.id, 'male')}
+            >
+              Hatch Male
+            </button>
+            <button
+              type="button"
+              className="female"
+              onClick={() => onOwnedMonsterHatch(owned.id, 'female')}
+            >
+              Hatch Female
+            </button>
+            <button
+              type="button"
+              className="stable-remove"
+              onClick={() => onOwnedMonsterRemove(owned.id)}
+              title="Remove from stable"
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
+        ) : (
+          <div className="tree-gender-toggle">
+            <button
+              type="button"
+              className={owned.gender === 'male' ? 'active male' : 'male'}
+              onClick={() => onOwnedMonsterGenderChange(owned.id, 'male')}
+            >
+              Male
+            </button>
+            <button
+              type="button"
+              className={owned.gender === 'female' ? 'active female' : 'female'}
+              onClick={() => onOwnedMonsterGenderChange(owned.id, 'female')}
+            >
+              Female
+            </button>
+            <button
+              type="button"
+              className="stable-remove"
+              onClick={() => onOwnedMonsterRemove(owned.id)}
+              title="Remove from stable"
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
+        )}
       </div>
     );
   };
@@ -260,7 +297,7 @@ export const MonsterList: React.FC<MonsterListProps> = ({
         const byNickname = ownedMonsters.find((owned) =>
           !usedOwnedIds.has(owned.id) &&
           owned.nickname.trim() === nickname &&
-          (!requiredGender || owned.gender === requiredGender)
+          (!requiredGender || owned.isEgg || owned.gender === requiredGender)
         );
         if (byNickname) {
           return byNickname;
@@ -276,7 +313,7 @@ export const MonsterList: React.FC<MonsterListProps> = ({
         return ownedMonsters.find((owned) =>
           !usedOwnedIds.has(owned.id) &&
           owned.monsterId === node.value &&
-          (!requiredGender || owned.gender === requiredGender)
+          (!requiredGender || owned.isEgg || owned.gender === requiredGender)
         ) || null;
       }
 
@@ -285,7 +322,7 @@ export const MonsterList: React.FC<MonsterListProps> = ({
         if (usedOwnedIds.has(owned.id)) {
           return false;
         }
-        if (requiredGender && owned.gender !== requiredGender) {
+        if (requiredGender && !owned.isEgg && owned.gender !== requiredGender) {
           return false;
         }
         const ownedMonster = getMonsterById(owned.monsterId);
@@ -464,6 +501,16 @@ export const MonsterList: React.FC<MonsterListProps> = ({
         ) : (
           <div className="stable-gender-sections">
             <section className="stable-gender-section">
+              <h3 className="stable-gender-heading">Eggs ({eggOwned.length})</h3>
+              {eggOwned.length === 0 ? (
+                <p className="tree-help">No eggs.</p>
+              ) : (
+                <div className="stable-grid">
+                  {eggOwned.map((owned) => renderStableCard(owned))}
+                </div>
+              )}
+            </section>
+            <section className="stable-gender-section">
               <h3 className="stable-gender-heading">Male ({maleOwned.length})</h3>
               {maleOwned.length === 0 ? (
                 <p className="tree-help">No male monsters.</p>
@@ -536,22 +583,41 @@ export const MonsterList: React.FC<MonsterListProps> = ({
             )}
           </div>
 
-          <select
-            value={selectedGender}
-            onChange={(e) => setSelectedGender(e.target.value as Gender)}
-            className="family-filter"
-          >
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-          </select>
+          {!addAsEgg ? (
+            <select
+              value={selectedGender}
+              onChange={(e) => setSelectedGender(e.target.value as Gender)}
+              className="family-filter"
+            >
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+          ) : (
+            <input
+              type="text"
+              className="search-input"
+              value="Egg (no gender)"
+              readOnly
+            />
+          )}
 
           <input
             type="text"
             placeholder="Nickname (optional)"
-            value={nickname}
+            value={addAsEgg ? 'Egg' : nickname}
             onChange={(e) => setNickname(e.target.value)}
             className="search-input"
+            disabled={addAsEgg}
           />
+
+          <label className="tree-help" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <input
+              type="checkbox"
+              checked={addAsEgg}
+              onChange={(e) => setAddAsEgg(e.target.checked)}
+            />
+            Add as Egg
+          </label>
 
           <button
             type="button"

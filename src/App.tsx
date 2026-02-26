@@ -203,14 +203,20 @@ function App() {
     setBreedingPlans(nextPlans);
   }, [selectedGoals, userMonsters, plannerSeedMonsterIds, isPlannerTabActive]);
 
-  const handleOwnedMonsterAdd = (monsterId: string, gender: 'male' | 'female', nickname: string) => {
+  const handleOwnedMonsterAdd = (
+    monsterId: string,
+    gender: 'male' | 'female',
+    nickname: string,
+    isEgg = false
+  ) => {
     setOwnedMonsters((prev) => [
       ...prev,
       {
         id: `${monsterId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         monsterId,
         gender,
-        nickname: nickname.trim()
+        nickname: isEgg ? 'Egg' : nickname.trim(),
+        isEgg
       }
     ]);
   };
@@ -224,6 +230,16 @@ function App() {
       prev.map((owned) => (
         owned.id === ownedMonsterId
           ? { ...owned, gender }
+          : owned
+      ))
+    );
+  };
+
+  const handleOwnedMonsterHatch = (ownedMonsterId: string, gender: 'male' | 'female') => {
+    setOwnedMonsters((prev) =>
+      prev.map((owned) => (
+        owned.id === ownedMonsterId
+          ? { ...owned, isEgg: false, gender, nickname: owned.nickname.trim() || '' }
           : owned
       ))
     );
@@ -360,6 +376,7 @@ function App() {
                     onOwnedMonsterAdd={handleOwnedMonsterAdd}
                     onOwnedMonsterRemove={handleOwnedMonsterRemove}
                     onOwnedMonsterGenderChange={handleOwnedMonsterGenderChange}
+                    onOwnedMonsterHatch={handleOwnedMonsterHatch}
                     onOwnedKeyAdd={handleOwnedKeyAdd}
                     onOwnedKeyRemove={handleOwnedKeyRemove}
                     onToggleOwnedStoryKeyWorld={handleToggleOwnedStoryKeyWorld}

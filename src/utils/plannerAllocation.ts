@@ -38,10 +38,12 @@ export const deriveUserMonstersFromOwned = (ownedMonsters: OwnedMonster[]): User
   ownedMonsters.forEach((owned) => {
     const existing = grouped.get(owned.monsterId) || { count: 0, maleCount: 0, femaleCount: 0 };
     existing.count += 1;
-    if (owned.gender === 'male') {
-      existing.maleCount += 1;
-    } else {
-      existing.femaleCount += 1;
+    if (!owned.isEgg) {
+      if (owned.gender === 'male') {
+        existing.maleCount += 1;
+      } else {
+        existing.femaleCount += 1;
+      }
     }
     grouped.set(owned.monsterId, existing);
   });
@@ -170,8 +172,14 @@ export const computeAutoAssignments = (
     pass: 'exact' | 'family'
   ) => {
     result[goalId].checkedNodes.push(path);
-    result[goalId].checkedNodeGenders[path] = owned.gender;
-    if (owned.nickname.trim()) {
+    const expectedGender = result[goalId].checkedNodeGenders[path];
+    const assignedGender = owned.isEgg ? expectedGender : owned.gender;
+    if (assignedGender) {
+      result[goalId].checkedNodeGenders[path] = assignedGender;
+    }
+    if (owned.isEgg) {
+      result[goalId].checkedNodeNames[path] = 'Egg';
+    } else if (owned.nickname.trim()) {
       result[goalId].checkedNodeNames[path] = owned.nickname.trim();
     }
 
@@ -179,11 +187,12 @@ export const computeAutoAssignments = (
     // so the planner UI can still show the intended pair direction.
     const siblingPath = getSiblingPath(path);
     if (
+      assignedGender &&
       siblingPath &&
       !result[goalId].checkedNodes.includes(siblingPath) &&
       !result[goalId].checkedNodeGenders[siblingPath]
     ) {
-      result[goalId].checkedNodeGenders[siblingPath] = owned.gender === 'male' ? 'female' : 'male';
+      result[goalId].checkedNodeGenders[siblingPath] = assignedGender === 'male' ? 'female' : 'male';
     }
 
     ensureGoalSet(goalId).add(path);
@@ -202,6 +211,9 @@ export const computeAutoAssignments = (
   };
 
   const isGenderCompatible = (goalId: string, path: string, owned: OwnedMonster) => {
+    if (owned.isEgg) {
+      return true;
+    }
     const siblingPath = getSiblingPath(path);
     if (!siblingPath) {
       return true;
@@ -327,7 +339,7 @@ export const computeAutoAssignments = (
         if (left.id === right.id) {
           continue;
         }
-        if (left.gender === right.gender) {
+        if (!left.isEgg && !right.isEgg && left.gender === right.gender) {
           continue;
         }
         const pairResult = getBreedingResult(left.monsterId, right.monsterId);
