@@ -101,6 +101,24 @@ body {
   margin-bottom: 1rem;
 }
 
+.stable-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.stable-header-row h2 {
+  margin: 0;
+}
+
+.stable-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .stable-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -262,6 +280,83 @@ body {
   position: relative;
 }
 
+.stable-add-form-grid {
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.stable-add-form-grid .search-input,
+.stable-add-form-grid .family-filter {
+  min-height: 44px;
+}
+
+.breed-panel {
+  border: 1px solid #dfe6f4;
+  background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+}
+
+.breed-form-grid {
+  align-items: stretch;
+  gap: 1rem;
+}
+
+.breed-field-group {
+  display: grid;
+  gap: 0.4rem;
+  padding: 0.7rem;
+  border: 1px solid #dce4f2;
+  border-radius: 10px;
+  background: #fbfdff;
+}
+
+.breed-field-group label {
+  font-weight: 700;
+  color: #2f446b;
+}
+
+.breed-actions {
+  margin-top: 0.5rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.75rem;
+}
+
+.breed-cancel-btn {
+  background: #ffffff;
+  color: #3a4e72;
+  border: 1px solid #c7d3e8;
+  box-shadow: none;
+}
+
+.breed-cancel-btn:hover {
+  background: #f3f7ff;
+}
+
+.egg-toggle-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border: 1px solid #d5ddeb;
+  border-radius: 999px;
+  background: #f6f9ff;
+  padding: 0 0.75rem;
+}
+
+.egg-toggle-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: #4a5f83;
+  font-weight: 600;
+  user-select: none;
+}
+
+.egg-toggle-label input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+}
+
 .combobox-menu {
   position: absolute;
   z-index: 20;
@@ -308,11 +403,30 @@ body {
   gap: 0.4rem;
   font-weight: 700;
   cursor: pointer;
+  justify-content: center;
+}
+
+.breed-action-btn {
+  padding: 0.5rem 0.8rem;
+  border-radius: 999px;
+  background: #5067d9;
+  box-shadow: 0 1px 2px rgba(28, 45, 90, 0.2);
 }
 
 .add-stable-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+@media (max-width: 700px) {
+  .stable-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .breed-actions {
+    grid-template-columns: 1fr;
+  }
 }
 
 .keys-summary {

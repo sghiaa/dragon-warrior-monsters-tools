@@ -273,4 +273,54 @@ describe('MonsterList key family highlighting', () => {
     expect(onOwnedMonsterAdd).toHaveBeenCalledWith('spotking', 'male', 'Egg', true);
     expect(screen.queryByText('Result Preview')).not.toBeInTheDocument();
   });
+
+  it('renders breed action in stable header actions container', () => {
+    render(
+      <MonsterList
+        {...baseProps}
+        ownedMonsters={[
+          { id: 'male-slime', monsterId: 'slime', gender: 'male', nickname: 'Slib' },
+          { id: 'female-drak', monsterId: 'drakslime', gender: 'female', nickname: 'Draki' }
+        ]}
+        ownedKeys={[]}
+      />
+    );
+
+    const headerActions = screen.getByTestId('stable-header-actions');
+    expect(within(headerActions).getByRole('button', { name: 'Breed' })).toBeInTheDocument();
+  });
+
+  it('renders add monster form in grouped container with dedicated egg toggle control', () => {
+    render(
+      <MonsterList
+        {...baseProps}
+        ownedMonsters={[]}
+        ownedKeys={[]}
+      />
+    );
+
+    expect(screen.getByTestId('stable-add-form')).toBeInTheDocument();
+    const eggControl = screen.getByTestId('add-as-egg-control');
+    expect(within(eggControl).getByLabelText('Add as Egg')).toBeInTheDocument();
+  });
+
+  it('renders breed panel with grouped form and secondary cancel action styling', () => {
+    render(
+      <MonsterList
+        {...baseProps}
+        ownedMonsters={[
+          { id: 'male-slime', monsterId: 'slime', gender: 'male', nickname: 'Slib' },
+          { id: 'female-drak', monsterId: 'drakslime', gender: 'female', nickname: 'Draki' }
+        ]}
+        ownedKeys={[]}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Breed' }));
+    expect(screen.getByTestId('breed-form-grid')).toBeInTheDocument();
+
+    const actions = screen.getByTestId('breed-actions');
+    expect(within(actions).getByRole('button', { name: 'Confirm Breed' })).toBeInTheDocument();
+    expect(within(actions).getByRole('button', { name: 'Cancel' })).toHaveClass('breed-cancel-btn');
+  });
 });

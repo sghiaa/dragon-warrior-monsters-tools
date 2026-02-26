@@ -567,15 +567,19 @@ export const MonsterList: React.FC<MonsterListProps> = ({
   return (
     <div className="monster-list">
       <div className="stable-panel">
-        <h2>My Stable ({ownedMonsters.length})</h2>
-        <button
-          type="button"
-          className="add-stable-btn"
-          onClick={() => setIsBreedOpen(true)}
-          disabled={breedingCandidates.length < 2}
-        >
-          Breed
-        </button>
+        <div className="stable-header-row">
+          <h2>My Stable ({ownedMonsters.length})</h2>
+          <div className="stable-header-actions" data-testid="stable-header-actions">
+            <button
+              type="button"
+              className="add-stable-btn breed-action-btn"
+              onClick={() => setIsBreedOpen(true)}
+              disabled={breedingCandidates.length < 2}
+            >
+              Breed
+            </button>
+          </div>
+        </div>
         {selectedGoals.length > 0 && (
           <div className="stable-plan-legend">
             {selectedGoals.map((goalId) => {
@@ -632,10 +636,10 @@ export const MonsterList: React.FC<MonsterListProps> = ({
       </div>
 
       {isBreedOpen && (
-        <div className="stable-add-panel">
+        <div className="stable-add-panel breed-panel">
           <h3>Breed Monsters</h3>
-          <div className="add-form-grid">
-            <div>
+          <div className="add-form-grid breed-form-grid" data-testid="breed-form-grid">
+            <div className="breed-field-group">
               <label htmlFor="breed-pedigree-select">Pedigree</label>
               <input
                 aria-label="Pedigree Filter"
@@ -664,7 +668,7 @@ export const MonsterList: React.FC<MonsterListProps> = ({
               </select>
             </div>
 
-            <div>
+            <div className="breed-field-group">
               <label htmlFor="breed-mate-select">Mate</label>
               <input
                 aria-label="Mate Filter"
@@ -706,7 +710,7 @@ export const MonsterList: React.FC<MonsterListProps> = ({
             </div>
           )}
 
-          <div className="add-form-grid">
+          <div className="add-form-grid breed-actions" data-testid="breed-actions">
             <button
               type="button"
               className="add-stable-btn"
@@ -717,7 +721,7 @@ export const MonsterList: React.FC<MonsterListProps> = ({
             </button>
             <button
               type="button"
-              className="add-stable-btn"
+              className="add-stable-btn breed-cancel-btn"
               onClick={resetBreedDialog}
             >
               Cancel
@@ -728,7 +732,7 @@ export const MonsterList: React.FC<MonsterListProps> = ({
 
       <div className="stable-add-panel">
         <h3>Add Monster to Stable</h3>
-        <div className="add-form-grid">
+        <div className="add-form-grid stable-add-form-grid" data-testid="stable-add-form">
           <div className="stable-combobox">
             <input
               type="text"
@@ -802,14 +806,17 @@ export const MonsterList: React.FC<MonsterListProps> = ({
             disabled={addAsEgg}
           />
 
-          <label className="tree-help" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <input
-              type="checkbox"
-              checked={addAsEgg}
-              onChange={(e) => setAddAsEgg(e.target.checked)}
-            />
-            Add as Egg
-          </label>
+          <div className="egg-toggle-control" data-testid="add-as-egg-control">
+            <label htmlFor="add-as-egg-checkbox" className="egg-toggle-label">
+              <input
+                id="add-as-egg-checkbox"
+                type="checkbox"
+                checked={addAsEgg}
+                onChange={(e) => setAddAsEgg(e.target.checked)}
+              />
+              Add as Egg
+            </label>
+          </div>
 
           <button
             type="button"
