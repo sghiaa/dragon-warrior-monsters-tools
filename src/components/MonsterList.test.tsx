@@ -1,26 +1,41 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MonsterList } from './MonsterList';
 import { loadPlannerProgress } from '../utils/storage';
 
 jest.mock('../data/monsters', () => ({
   MONSTERS: [
-    { id: 'pizzaro', name: 'Pizzaro', family: 'Boss' }
+    { id: 'pizzaro', name: 'Pizzaro', family: 'Boss' },
+    { id: 'slime', name: 'Slime', family: 'Slime' },
+    { id: 'drakslime', name: 'DrakSlime', family: 'Dragon' },
+    { id: 'spotking', name: 'SpotKing', family: 'Slime' }
   ],
   getMonsterById: (id: string) => {
-    if (id === 'pizzaro') {
-      return {
-        id: 'pizzaro',
-        name: 'Pizzaro',
-        family: 'Boss',
-        rank: 1,
-        hpGrowth: 1,
-        mpGrowth: 1,
-        attackGrowth: 1,
-        defenseGrowth: 1,
-        agilityGrowth: 1,
-        intelligenceGrowth: 1
-      };
+    const byId: Record<string, { id: string; name: string; family: string }> = {
+      pizzaro: { id: 'pizzaro', name: 'Pizzaro', family: 'Boss' },
+      slime: { id: 'slime', name: 'Slime', family: 'Slime' },
+      drakslime: { id: 'drakslime', name: 'DrakSlime', family: 'Dragon' },
+      spotking: { id: 'spotking', name: 'SpotKing', family: 'Slime' }
+    };
+    const monster = byId[id];
+    if (!monster) {
+      return undefined;
+    }
+    return {
+      ...monster,
+      rank: 1,
+      hpGrowth: 1,
+      mpGrowth: 1,
+      attackGrowth: 1,
+      defenseGrowth: 1,
+      agilityGrowth: 1,
+      intelligenceGrowth: 1
+    };
+  },
+  getBreedingResult: (parent1: string, parent2: string) => {
+    const parents = [parent1, parent2].sort().join('+');
+    if (parents === 'drakslime+slime') {
+      return { parent1, parent2, result: 'spotking' };
     }
     return undefined;
   }
@@ -202,5 +217,60 @@ describe('MonsterList key family highlighting', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add to Stable' }));
 
     expect(onOwnedMonsterAdd).toHaveBeenCalledWith('pizzaro', 'male', 'Egg', true);
+  });
+
+  it('opens breed flow, filters mates to opposite gender, and previews result', () => {
+    render(
+      <MonsterList
+        {...baseProps}
+        ownedMonsters={[
+          { id: 'male-slime', monsterId: 'slime', gender: 'male', nickname: 'Slib' },
+          { id: 'female-drak', monsterId: 'drakslime', gender: 'female', nickname: 'Draki' },
+          { id: 'male-pizz', monsterId: 'pizzaro', gender: 'male', nickname: 'Piz' }
+        ]}
+        ownedKeys={[]}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Breed' }));
+
+    const pedigreeSelect = screen.getByLabelText('Pedigree');
+    fireEvent.change(pedigreeSelect, { target: { value: 'male-slime' } });
+
+    const mateSelect = screen.getByLabelText('Mate');
+    expect(within(mateSelect).getByRole('option', { name: /DrakSlime \[Draki\] \(Female\)/i })).toBeInTheDocument();
+    expect(within(mateSelect).queryByRole('option', { name: /Pizzaro \[Piz\] \(Male\)/i })).not.toBeInTheDocument();
+
+    fireEvent.change(mateSelect, { target: { value: 'female-drak' } });
+    expect(screen.getByText('Result Preview')).toBeInTheDocument();
+    expect(screen.getByText('SpotKing')).toBeInTheDocument();
+  });
+
+  it('confirms breeding by removing parents, adding child egg, and closing the popover', () => {
+    const onOwnedMonsterRemove = jest.fn();
+    const onOwnedMonsterAdd = jest.fn();
+
+    render(
+      <MonsterList
+        {...baseProps}
+        onOwnedMonsterRemove={onOwnedMonsterRemove}
+        onOwnedMonsterAdd={onOwnedMonsterAdd}
+        ownedMonsters={[
+          { id: 'male-slime', monsterId: 'slime', gender: 'male', nickname: 'Slib' },
+          { id: 'female-drak', monsterId: 'drakslime', gender: 'female', nickname: 'Draki' }
+        ]}
+        ownedKeys={[]}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Breed' }));
+    fireEvent.change(screen.getByLabelText('Pedigree'), { target: { value: 'male-slime' } });
+    fireEvent.change(screen.getByLabelText('Mate'), { target: { value: 'female-drak' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm Breed' }));
+
+    expect(onOwnedMonsterRemove).toHaveBeenCalledWith('male-slime');
+    expect(onOwnedMonsterRemove).toHaveBeenCalledWith('female-drak');
+    expect(onOwnedMonsterAdd).toHaveBeenCalledWith('spotking', 'male', 'Egg', true);
+    expect(screen.queryByText('Result Preview')).not.toBeInTheDocument();
   });
 });

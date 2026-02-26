@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { BreedingPlan, BreedingTreeNode, Gender, OwnedKey, OwnedMonster } from '../types/monster';
-import { MONSTERS, getMonsterById } from '../data/monsters';
+import { MONSTERS, getBreedingResult, getMonsterById } from '../data/monsters';
 import { KEY_DESCRIPTORS, KEY_FAMILY_BY_CODE, KEY_FAMILY_OPTIONS } from '../data/keys';
 import { loadPlannerProgress } from '../utils/storage';
 import { Plus, Trash2 } from 'lucide-react';
@@ -47,6 +47,11 @@ export const MonsterList: React.FC<MonsterListProps> = ({
   const [selectedKeyDescriptor, setSelectedKeyDescriptor] = useState<string>(KEY_DESCRIPTORS[0]);
   const [selectedKeyFamily, setSelectedKeyFamily] = useState<string>(KEY_FAMILY_OPTIONS[0].code);
   const [selectedKeyFamilyHighlight, setSelectedKeyFamilyHighlight] = useState<string | null>(null);
+  const [isBreedOpen, setIsBreedOpen] = useState<boolean>(false);
+  const [pedigreeQuery, setPedigreeQuery] = useState<string>('');
+  const [mateQuery, setMateQuery] = useState<string>('');
+  const [selectedPedigreeId, setSelectedPedigreeId] = useState<string>('');
+  const [selectedMateId, setSelectedMateId] = useState<string>('');
 
   const filteredMonsters = useMemo(() => {
     const normalized = speciesQuery.trim().toLowerCase();
@@ -207,6 +212,90 @@ export const MonsterList: React.FC<MonsterListProps> = ({
         )}
       </div>
     );
+  };
+
+  const breedingCandidates = useMemo(
+    () => ownedMonsters.filter((owned) => !owned.isEgg),
+    [ownedMonsters]
+  );
+
+  const selectedPedigree = useMemo(
+    () => breedingCandidates.find((owned) => owned.id === selectedPedigreeId) || null,
+    [breedingCandidates, selectedPedigreeId]
+  );
+
+  const oppositeGender: Gender | null = selectedPedigree
+    ? (selectedPedigree.gender === 'male' ? 'female' : 'male')
+    : null;
+
+  const filteredPedigreeCandidates = useMemo(() => {
+    const normalized = pedigreeQuery.trim().toLowerCase();
+    return breedingCandidates.filter((owned) => {
+      if (!normalized) {
+        return true;
+      }
+      const monsterName = getMonsterById(owned.monsterId)?.name || owned.monsterId;
+      return (
+        monsterName.toLowerCase().includes(normalized) ||
+        owned.nickname.trim().toLowerCase().includes(normalized)
+      );
+    });
+  }, [breedingCandidates, pedigreeQuery]);
+
+  const filteredMateCandidates = useMemo(() => {
+    if (!selectedPedigree) {
+      return [];
+    }
+    const normalized = mateQuery.trim().toLowerCase();
+    return breedingCandidates
+      .filter((owned) => owned.id !== selectedPedigree.id && owned.gender === oppositeGender)
+      .filter((owned) => {
+        if (!normalized) {
+          return true;
+        }
+        const monsterName = getMonsterById(owned.monsterId)?.name || owned.monsterId;
+        return (
+          monsterName.toLowerCase().includes(normalized) ||
+          owned.nickname.trim().toLowerCase().includes(normalized)
+        );
+      });
+  }, [breedingCandidates, selectedPedigree, oppositeGender, mateQuery]);
+
+  const selectedMate = useMemo(
+    () => filteredMateCandidates.find((owned) => owned.id === selectedMateId) || null,
+    [filteredMateCandidates, selectedMateId]
+  );
+
+  const breedingPreview = useMemo(() => {
+    if (!selectedPedigree || !selectedMate) {
+      return null;
+    }
+    return getBreedingResult(selectedPedigree.monsterId, selectedMate.monsterId) || null;
+  }, [selectedPedigree, selectedMate]);
+
+  const formatOwnedOption = useCallback((owned: OwnedMonster) => {
+    const monsterName = getMonsterById(owned.monsterId)?.name || owned.monsterId;
+    const nicknamePart = owned.nickname.trim() ? ` [${owned.nickname.trim()}]` : '';
+    const genderLabel = owned.gender === 'male' ? 'Male' : 'Female';
+    return `${monsterName}${nicknamePart} (${genderLabel})`;
+  }, []);
+
+  const resetBreedDialog = () => {
+    setPedigreeQuery('');
+    setMateQuery('');
+    setSelectedPedigreeId('');
+    setSelectedMateId('');
+    setIsBreedOpen(false);
+  };
+
+  const handleConfirmBreed = () => {
+    if (!selectedPedigree || !selectedMate || !breedingPreview) {
+      return;
+    }
+    onOwnedMonsterRemove(selectedPedigree.id);
+    onOwnedMonsterRemove(selectedMate.id);
+    onOwnedMonsterAdd(breedingPreview.result, 'male', 'Egg', true);
+    resetBreedDialog();
   };
 
   const storyKeyWorlds = useMemo(() => {
@@ -479,6 +568,14 @@ export const MonsterList: React.FC<MonsterListProps> = ({
     <div className="monster-list">
       <div className="stable-panel">
         <h2>My Stable ({ownedMonsters.length})</h2>
+        <button
+          type="button"
+          className="add-stable-btn"
+          onClick={() => setIsBreedOpen(true)}
+          disabled={breedingCandidates.length < 2}
+        >
+          Breed
+        </button>
         {selectedGoals.length > 0 && (
           <div className="stable-plan-legend">
             {selectedGoals.map((goalId) => {
@@ -533,6 +630,101 @@ export const MonsterList: React.FC<MonsterListProps> = ({
           </div>
         )}
       </div>
+
+      {isBreedOpen && (
+        <div className="stable-add-panel">
+          <h3>Breed Monsters</h3>
+          <div className="add-form-grid">
+            <div>
+              <label htmlFor="breed-pedigree-select">Pedigree</label>
+              <input
+                aria-label="Pedigree Filter"
+                type="text"
+                value={pedigreeQuery}
+                onChange={(e) => setPedigreeQuery(e.target.value)}
+                placeholder="Filter pedigree monsters..."
+                className="search-input"
+              />
+              <select
+                id="breed-pedigree-select"
+                aria-label="Pedigree"
+                value={selectedPedigreeId}
+                onChange={(e) => {
+                  setSelectedPedigreeId(e.target.value);
+                  setSelectedMateId('');
+                }}
+                className="family-filter"
+              >
+                <option value="">Select pedigree</option>
+                {filteredPedigreeCandidates.map((owned) => (
+                  <option key={owned.id} value={owned.id}>
+                    {formatOwnedOption(owned)}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="breed-mate-select">Mate</label>
+              <input
+                aria-label="Mate Filter"
+                type="text"
+                value={mateQuery}
+                onChange={(e) => setMateQuery(e.target.value)}
+                placeholder="Filter mate monsters..."
+                className="search-input"
+                disabled={!selectedPedigree}
+              />
+              <select
+                id="breed-mate-select"
+                aria-label="Mate"
+                value={selectedMateId}
+                onChange={(e) => setSelectedMateId(e.target.value)}
+                className="family-filter"
+                disabled={!selectedPedigree}
+              >
+                <option value="">
+                  {selectedPedigree ? `Select ${oppositeGender || ''} mate` : 'Select pedigree first'}
+                </option>
+                {filteredMateCandidates.map((owned) => (
+                  <option key={owned.id} value={owned.id}>
+                    {formatOwnedOption(owned)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {selectedPedigree && selectedMate && (
+            <div>
+              <h4>Result Preview</h4>
+              {breedingPreview ? (
+                <p>{getMonsterById(breedingPreview.result)?.name || breedingPreview.result}</p>
+              ) : (
+                <p>No breeding result for this pair.</p>
+              )}
+            </div>
+          )}
+
+          <div className="add-form-grid">
+            <button
+              type="button"
+              className="add-stable-btn"
+              onClick={handleConfirmBreed}
+              disabled={!breedingPreview}
+            >
+              Confirm Breed
+            </button>
+            <button
+              type="button"
+              className="add-stable-btn"
+              onClick={resetBreedDialog}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="stable-add-panel">
         <h3>Add Monster to Stable</h3>
