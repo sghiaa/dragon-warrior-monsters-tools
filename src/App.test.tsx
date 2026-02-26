@@ -2,14 +2,31 @@ import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import App from './App';
 
-test('renders app title', () => {
+jest.mock('./data/monsters', () => ({
+  __esModule: true,
+  MONSTERS: [],
+  BREEDING_PAIRS: [],
+  RAW_BREEDING_PAIRS: [],
+  initializeData: () => Promise.resolve(),
+  canonicalMonsterId: (value: string) => value,
+  getMonsterById: () => undefined
+}));
+
+test('renders app title', async () => {
   render(<App />);
   expect(screen.getByText(/Dragon Warrior Monsters 2 Breeding Planner/i)).toBeInTheDocument();
+  await waitFor(() => {
+    expect(screen.getByRole('button', { name: 'My Collection' })).toBeInTheDocument();
+  });
 });
 
 test('closes monster detail when switching tabs', async () => {
   window.location.hash = '#monster/roboster1';
   render(<App />);
+
+  await waitFor(() => {
+    expect(screen.getByRole('button', { name: 'My Collection' })).toBeInTheDocument();
+  });
 
   await waitFor(() => {
     expect(screen.getByTestId('monster-detail-view')).toBeInTheDocument();
@@ -25,6 +42,10 @@ test('closes monster detail when switching tabs', async () => {
 test('tab switch clears monster hash', async () => {
   window.location.hash = '#monster/roboster1';
   render(<App />);
+
+  await waitFor(() => {
+    expect(screen.getByRole('button', { name: 'My Collection' })).toBeInTheDocument();
+  });
 
   await waitFor(() => {
     expect(screen.getByTestId('monster-detail-view')).toBeInTheDocument();
