@@ -75,6 +75,21 @@ export interface BreedingTreeNode {
   right?: BreedingTreeNode;
 }
 
+export interface PlannerPairBreedNode {
+  path: string;
+  nodeKind: BreedingTreeNode['kind'];
+  nodeValue: string;
+  checked: boolean;
+  gender?: Gender;
+  assignedName?: string;
+}
+
+export interface PlannerPairBreedRequest {
+  resultMonsterId: string;
+  left: PlannerPairBreedNode;
+  right: PlannerPairBreedNode;
+}
+
 export interface BreedingStep {
   step: number;
   parent1: string;

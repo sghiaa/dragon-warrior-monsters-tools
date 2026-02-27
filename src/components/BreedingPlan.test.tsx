@@ -251,4 +251,49 @@ describe('BreedingPlan tree interactions', () => {
 
     expect(remainingMovesLine).toHaveTextContent('Remaining moves to learn: 1 (BigBang)');
   });
+
+  it('enables pair-breed button when both child nodes are checked with opposite genders and emits callback', () => {
+    const onBreedPair = jest.fn();
+    render(<BreedingPlan plan={buildTreePlan()} goalStateKey="goal::pair-breed" onBreedPair={onBreedPair} />);
+
+    const beastCheckbox = screen.getByText('Any Beast').closest('.tree-check')?.querySelector('input');
+    fireEvent.click(beastCheckbox as Element);
+    fireEvent.click(screen.getByRole('button', { name: 'Male' }));
+
+    const slimeCheckbox = screen.getByText('Any Slime').closest('.tree-check')?.querySelector('input');
+    fireEvent.click(slimeCheckbox as Element);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Female' })[1]);
+
+    const pairButton = screen.getByTestId('breed-pair-root');
+    expect(pairButton).toBeEnabled();
+    fireEvent.click(pairButton);
+
+    expect(onBreedPair).toHaveBeenCalledTimes(1);
+    expect(onBreedPair).toHaveBeenCalledWith(expect.objectContaining({
+      resultMonsterId: 'darkdrium',
+      left: expect.objectContaining({ path: 'root.L', gender: 'male' }),
+      right: expect.objectContaining({ path: 'root.R', gender: 'female' })
+    }));
+  });
+
+  it('keeps pair-breed button disabled when both child nodes have same gender', () => {
+    render(
+      <BreedingPlan
+        plan={buildTreePlan()}
+        goalStateKey="goal::pair-disabled"
+        onBreedPair={jest.fn()}
+      />
+    );
+
+    const beastCheckbox = screen.getByText('Any Beast').closest('.tree-check')?.querySelector('input');
+    fireEvent.click(beastCheckbox as Element);
+    fireEvent.click(screen.getByRole('button', { name: 'Male' }));
+
+    const slimeCheckbox = screen.getByText('Any Slime').closest('.tree-check')?.querySelector('input');
+    fireEvent.click(slimeCheckbox as Element);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Male' })[1]);
+
+    const pairButton = screen.getByTestId('breed-pair-root');
+    expect(pairButton).toBeDisabled();
+  });
 });

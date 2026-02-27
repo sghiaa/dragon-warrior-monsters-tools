@@ -1,5 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { BreedingPlan as BreedingPlanType, BreedingTreeNode, Gender } from '../types/monster';
+import {
+  BreedingPlan as BreedingPlanType,
+  BreedingTreeNode,
+  Gender,
+  PlannerPairBreedRequest
+} from '../types/monster';
 import { getMonsterById } from '../data/monsters';
 import { loadPlannerProgress, savePlannerProgress } from '../utils/storage';
 import { CheckCircle, XCircle, AlertCircle } from 'lucide-react';
@@ -19,6 +24,7 @@ interface BreedingPlanProps {
   plan: BreedingPlanType;
   goalStateKey: string;
   showNativeMoves?: boolean;
+  onBreedPair?: (request: PlannerPairBreedRequest) => void;
   autoAssignment?: {
     checkedNodes: string[];
     checkedNodeGenders: Record<string, Gender>;
@@ -26,7 +32,13 @@ interface BreedingPlanProps {
   };
 }
 
-export const BreedingPlan: React.FC<BreedingPlanProps> = ({ plan, goalStateKey, showNativeMoves = false, autoAssignment }) => {
+export const BreedingPlan: React.FC<BreedingPlanProps> = ({
+  plan,
+  goalStateKey,
+  showNativeMoves = false,
+  onBreedPair,
+  autoAssignment
+}) => {
   const [checkedNodes, setCheckedNodes] = useState<Set<string>>(new Set());
   const [checkedNodeGenders, setCheckedNodeGenders] = useState<Record<string, Gender>>({});
   const [checkedNodeNames, setCheckedNodeNames] = useState<Record<string, string>>({});
@@ -233,6 +245,22 @@ export const BreedingPlan: React.FC<BreedingPlanProps> = ({ plan, goalStateKey, 
       : selectedGender
         ? `state-${selectedGender}`
         : 'state-baseline';
+    const leftPath = `${path}.L`;
+    const rightPath = `${path}.R`;
+    const leftChecked = hasChildren ? checkedNodes.has(leftPath) : false;
+    const rightChecked = hasChildren ? checkedNodes.has(rightPath) : false;
+    const leftGender = hasChildren ? checkedNodeGenders[leftPath] : undefined;
+    const rightGender = hasChildren ? checkedNodeGenders[rightPath] : undefined;
+    const canBreedPair = Boolean(
+      hasChildren &&
+      node.kind === 'monster' &&
+      leftChecked &&
+      rightChecked &&
+      leftGender &&
+      rightGender &&
+      leftGender !== rightGender &&
+      onBreedPair
+    );
 
     return (
       <li className="tree-item">
@@ -275,6 +303,41 @@ export const BreedingPlan: React.FC<BreedingPlanProps> = ({ plan, goalStateKey, 
                 onChange={(e) => setCheckedNodeName(path, e.target.value)}
                 placeholder={node.kind === 'monster' ? 'Nickname' : 'Custom label'}
               />
+            </div>
+          )}
+          {hasChildren && node.kind === 'monster' && onBreedPair && (
+            <div className="tree-gender-toggle">
+              <button
+                type="button"
+                data-testid={`breed-pair-${path.replace(/\./g, '-')}`}
+                disabled={!canBreedPair}
+                onClick={() => {
+                  if (!node.left || !node.right) {
+                    return;
+                  }
+                  onBreedPair({
+                    resultMonsterId: node.value,
+                    left: {
+                      path: leftPath,
+                      nodeKind: node.left.kind,
+                      nodeValue: node.left.value,
+                      checked: leftChecked,
+                      gender: leftGender,
+                      assignedName: checkedNodeNames[leftPath]
+                    },
+                    right: {
+                      path: rightPath,
+                      nodeKind: node.right.kind,
+                      nodeValue: node.right.value,
+                      checked: rightChecked,
+                      gender: rightGender,
+                      assignedName: checkedNodeNames[rightPath]
+                    }
+                  });
+                }}
+              >
+                Breed Pair
+              </button>
             </div>
           )}
         </div>

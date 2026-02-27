@@ -8,11 +8,12 @@ import { MonsterDetail } from './components/MonsterDetail';
 import { MovePlanner } from './components/MovePlanner';
 import { FamilyIndex } from './components/FamilyIndex';
 import { loadFromStorage, loadUiState, saveToStorage, saveUiState } from './utils/storage';
-import { BreedingPlan as BreedingPlanType, OwnedKey, OwnedMonster } from './types/monster';
+import { BreedingPlan as BreedingPlanType, OwnedKey, OwnedMonster, PlannerPairBreedRequest } from './types/monster';
 import { canonicalMonsterId, initializeData, MONSTERS } from './data/monsters';
 import { BreedingPathfinder } from './utils/breedingPathfinder';
 import { computeAutoAssignments, deriveUserMonstersFromOwned } from './utils/plannerAllocation';
 import { exportShareState, importShareState } from './utils/shareState';
+import { applyPlannerPairBreed } from './utils/plannerBreed';
 import './App.css';
 
 function App() {
@@ -246,6 +247,10 @@ function App() {
           : owned
       ))
     );
+  };
+
+  const handlePlannerPairBreed = (request: PlannerPairBreedRequest) => {
+    setOwnedMonsters((prev) => applyPlannerPairBreed(prev, request) || prev);
   };
 
   const handleOwnedKeyAdd = (descriptor: string, family: string) => {
@@ -495,6 +500,7 @@ function App() {
                             plan={plan}
                             goalStateKey={plannerGoalStateKey}
                             autoAssignment={autoAssignmentsByGoal[goalId]}
+                            onBreedPair={handlePlannerPairBreed}
                           />
                         );
                       })}
