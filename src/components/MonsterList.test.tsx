@@ -176,7 +176,54 @@ describe('MonsterList key family highlighting', () => {
     expect(screen.queryByTestId('key-suggestion-k2')).not.toBeInTheDocument();
   });
 
-  it('shows eggs in stable and allows hatching to a selected gender', () => {
+  it('shows eggs with hatch gender actions before nickname input is shown', () => {
+    const onOwnedMonsterHatch = jest.fn();
+    render(
+      <MonsterList
+        {...baseProps}
+        onOwnedMonsterHatch={onOwnedMonsterHatch}
+        ownedMonsters={[
+          { id: 'egg-1', monsterId: 'pizzaro', gender: 'male', nickname: 'Egg', isEgg: true }
+        ]}
+        ownedKeys={[]}
+      />
+    );
+
+    expect(screen.getByText('Eggs (1)')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Hatch Male' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Hatch Female' })).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText('Hatch nickname...')).not.toBeInTheDocument();
+  });
+
+  it('allows choosing male hatch, then entering nickname and confirming', () => {
+    const onOwnedMonsterHatch = jest.fn();
+    render(
+      <MonsterList
+        {...baseProps}
+        onOwnedMonsterHatch={onOwnedMonsterHatch}
+        ownedMonsters={[
+          { id: 'egg-1', monsterId: 'pizzaro', gender: 'male', nickname: 'Egg', isEgg: true }
+        ]}
+        ownedKeys={[]}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hatch Male' }));
+    const hatchControls = screen.getByTestId('egg-hatch-controls-egg-1');
+    expect(within(hatchControls).getByPlaceholderText('Nickname')).toBeInTheDocument();
+    expect(within(hatchControls).getByRole('button', { name: 'Hatch M' })).toBeInTheDocument();
+    const actionStack = within(hatchControls).getByTestId('egg-hatch-action-stack-egg-1');
+    expect(within(actionStack).getByRole('button', { name: 'Hatch M' })).toBeInTheDocument();
+    expect(within(actionStack).getByRole('button', { name: 'Back' })).toBeInTheDocument();
+
+    fireEvent.change(screen.getByPlaceholderText('Nickname'), {
+      target: { value: 'HatchedOne' }
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Hatch M' }));
+    expect(onOwnedMonsterHatch).toHaveBeenCalledWith('egg-1', 'male', 'HatchedOne');
+  });
+
+  it('allows choosing female hatch, then entering nickname and confirming', () => {
     const onOwnedMonsterHatch = jest.fn();
     render(
       <MonsterList
@@ -192,11 +239,15 @@ describe('MonsterList key family highlighting', () => {
     expect(screen.getByText('Eggs (1)')).toBeInTheDocument();
     expect(screen.getByText('[Egg]')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Hatch Male' }));
-    expect(onOwnedMonsterHatch).toHaveBeenCalledWith('egg-1', 'male');
-
     fireEvent.click(screen.getByRole('button', { name: 'Hatch Female' }));
-    expect(onOwnedMonsterHatch).toHaveBeenCalledWith('egg-1', 'female');
+    fireEvent.change(screen.getByPlaceholderText('Nickname'), {
+      target: { value: 'HatchedOne' }
+    });
+
+    expect(screen.getByRole('button', { name: 'Hatch F' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Hatch F' }));
+    expect(onOwnedMonsterHatch).toHaveBeenCalledWith('egg-1', 'female', 'HatchedOne');
   });
 
   it('allows adding a monster as an egg from the add form', () => {

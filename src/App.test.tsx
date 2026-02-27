@@ -140,3 +140,35 @@ test('breeding from stable removes parents and adds child egg', async () => {
   expect(screen.queryByText('[Draki]')).not.toBeInTheDocument();
   expect(screen.getByText('[Egg]')).toBeInTheDocument();
 });
+
+test('hatching an egg applies the entered nickname', async () => {
+  localStorage.setItem('dwm2-breeding-planner-data', JSON.stringify({
+    userMonsters: [],
+    ownedMonsters: [
+      { id: 'egg-1', monsterId: 'slime', gender: 'male', nickname: 'Egg', isEgg: true }
+    ],
+    ownedKeys: [],
+    ownedStoryKeyWorlds: [],
+    plannerProgressByGoal: {},
+    uiState: {},
+    lastUpdated: new Date().toISOString()
+  }));
+
+  render(<App />);
+
+  await waitFor(() => {
+    expect(screen.getByRole('button', { name: 'My Collection' })).toBeInTheDocument();
+  });
+
+  expect(screen.getByText('[Egg]')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Hatch Male' }));
+  fireEvent.change(screen.getByPlaceholderText('Nickname'), {
+    target: { value: 'Slibo' }
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Hatch M' }));
+
+  await waitFor(() => {
+    expect(screen.getByText('[Slibo]')).toBeInTheDocument();
+  });
+  expect(screen.queryByText('[Egg]')).not.toBeInTheDocument();
+});

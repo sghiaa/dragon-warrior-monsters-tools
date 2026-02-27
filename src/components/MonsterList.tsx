@@ -16,7 +16,7 @@ interface MonsterListProps {
   onOwnedMonsterAdd: (monsterId: string, gender: Gender, nickname: string, isEgg?: boolean) => void;
   onOwnedMonsterRemove: (ownedMonsterId: string) => void;
   onOwnedMonsterGenderChange: (ownedMonsterId: string, gender: Gender) => void;
-  onOwnedMonsterHatch: (ownedMonsterId: string, gender: Gender) => void;
+  onOwnedMonsterHatch: (ownedMonsterId: string, gender: Gender, nickname?: string) => void;
   onOwnedKeyAdd: (descriptor: string, family: string) => void;
   onOwnedKeyRemove: (ownedKeyId: string) => void;
   onToggleOwnedStoryKeyWorld: (worldName: string) => void;
@@ -52,6 +52,8 @@ export const MonsterList: React.FC<MonsterListProps> = ({
   const [mateQuery, setMateQuery] = useState<string>('');
   const [selectedPedigreeId, setSelectedPedigreeId] = useState<string>('');
   const [selectedMateId, setSelectedMateId] = useState<string>('');
+  const [hatchNicknameByOwnedId, setHatchNicknameByOwnedId] = useState<Record<string, string>>({});
+  const [pendingHatchGenderByOwnedId, setPendingHatchGenderByOwnedId] = useState<Partial<Record<string, Gender>>>({});
 
   const filteredMonsters = useMemo(() => {
     const normalized = speciesQuery.trim().toLowerCase();
@@ -160,21 +162,89 @@ export const MonsterList: React.FC<MonsterListProps> = ({
           )}
         </div>
         {owned.isEgg ? (
-          <div className="tree-gender-toggle">
-            <button
-              type="button"
-              className="male"
-              onClick={() => onOwnedMonsterHatch(owned.id, 'male')}
-            >
-              Hatch Male
-            </button>
-            <button
-              type="button"
-              className="female"
-              onClick={() => onOwnedMonsterHatch(owned.id, 'female')}
-            >
-              Hatch Female
-            </button>
+          <div className="tree-gender-toggle egg-hatch-controls" data-testid={`egg-hatch-controls-${owned.id}`}>
+            {pendingHatchGenderByOwnedId[owned.id] ? (
+              <>
+                <input
+                  type="text"
+                  className="search-input"
+                  placeholder="Nickname"
+                  value={hatchNicknameByOwnedId[owned.id] || ''}
+                  onChange={(e) => {
+                    const nextNickname = e.target.value;
+                    setHatchNicknameByOwnedId((prev) => ({
+                      ...prev,
+                      [owned.id]: nextNickname
+                    }));
+                  }}
+                />
+                <div
+                  className="egg-hatch-action-stack"
+                  data-testid={`egg-hatch-action-stack-${owned.id}`}
+                >
+                  <button
+                    type="button"
+                    className={pendingHatchGenderByOwnedId[owned.id] === 'male' ? 'male' : 'female'}
+                    onClick={() => {
+                      const selectedGender = pendingHatchGenderByOwnedId[owned.id];
+                      if (!selectedGender) {
+                        return;
+                      }
+                      onOwnedMonsterHatch(owned.id, selectedGender, (hatchNicknameByOwnedId[owned.id] || '').trim());
+                      setPendingHatchGenderByOwnedId((prev) => {
+                        const { [owned.id]: _removed, ...rest } = prev;
+                        return rest;
+                      });
+                      setHatchNicknameByOwnedId((prev) => {
+                        const { [owned.id]: _removed, ...rest } = prev;
+                        return rest;
+                      });
+                    }}
+                  >
+                    {pendingHatchGenderByOwnedId[owned.id] === 'male' ? 'Hatch M' : 'Hatch F'}
+                  </button>
+                  <button
+                    type="button"
+                    className="stable-remove"
+                    onClick={() => {
+                      setPendingHatchGenderByOwnedId((prev) => {
+                        const { [owned.id]: _removed, ...rest } = prev;
+                        return rest;
+                      });
+                    }}
+                  >
+                    Back
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className="male"
+                  onClick={() => {
+                    setPendingHatchGenderByOwnedId((prev) => ({
+                      ...prev,
+                      [owned.id]: 'male'
+                    }));
+                  }}
+                >
+                  Hatch Male
+                </button>
+                <button
+                  type="button"
+                  className="female"
+                  onClick={() => {
+                    setPendingHatchGenderByOwnedId((prev) => ({
+                      ...prev,
+                      [owned.id]: 'female'
+                    }));
+                  }}
+                >
+                  Hatch Female
+                </button>
+              </>
+            )}
             <button
               type="button"
               className="stable-remove"

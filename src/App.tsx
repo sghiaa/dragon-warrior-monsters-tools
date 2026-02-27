@@ -238,11 +238,11 @@ function App() {
     );
   };
 
-  const handleOwnedMonsterHatch = (ownedMonsterId: string, gender: 'male' | 'female') => {
+  const handleOwnedMonsterHatch = (ownedMonsterId: string, gender: 'male' | 'female', nickname?: string) => {
     setOwnedMonsters((prev) =>
       prev.map((owned) => (
         owned.id === ownedMonsterId
-          ? { ...owned, isEgg: false, gender, nickname: owned.nickname.trim() || '' }
+          ? { ...owned, isEgg: false, gender, nickname: (nickname || '').trim() || owned.nickname.trim() || '' }
           : owned
       ))
     );
