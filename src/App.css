@@ -1417,6 +1417,16 @@ body {
   font-size: 0.75rem;
 }
 
+.tree-depth-indicator {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #526482;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid #c8d4e6;
+  border-radius: 999px;
+  padding: 0.08rem 0.4rem;
+}
+
 .tree-node.state-baseline {
   background: #eceff3;
   border-color: #b8c0cc;
@@ -1439,6 +1449,18 @@ body {
   background: #dff6e4;
   border-color: #7cc793;
   color: #1f6a33;
+}
+
+.tree-node.state-parent-partial {
+  background: #fff4db;
+  border-color: #e5b95c;
+  color: #7b4d00;
+}
+
+.tree-node.state-parent-ready {
+  background: #d9f7e7;
+  border-color: #4fb783;
+  color: #145c3a;
 }
 
 .unlimited-breeding {

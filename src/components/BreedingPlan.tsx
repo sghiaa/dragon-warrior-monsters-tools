@@ -230,6 +230,7 @@ export const BreedingPlan: React.FC<BreedingPlanProps> = ({
 
   const renderTreeNode = (node: BreedingTreeNode, path: string): React.ReactNode => {
     const hasChildren = !!node.left && !!node.right;
+    const depth = path === 'root' ? 0 : path.split('.').length - 1;
     const nodeClass = node.kind === 'family' ? 'tree-node family' : 'tree-node monster';
     const isChecked = checkedNodes.has(path);
     const selectedGender = checkedNodeGenders[path];
@@ -240,25 +241,35 @@ export const BreedingPlan: React.FC<BreedingPlanProps> = ({
         ? `${path.slice(0, -2)}.L`
         : null;
     const isSiblingChecked = siblingPath ? checkedNodes.has(siblingPath) : false;
-    const stateClass = (isChecked && isSiblingChecked)
-      ? 'state-paired'
-      : selectedGender
-        ? `state-${selectedGender}`
-        : 'state-baseline';
     const leftPath = `${path}.L`;
     const rightPath = `${path}.R`;
     const leftChecked = hasChildren ? checkedNodes.has(leftPath) : false;
     const rightChecked = hasChildren ? checkedNodes.has(rightPath) : false;
     const leftGender = hasChildren ? checkedNodeGenders[leftPath] : undefined;
     const rightGender = hasChildren ? checkedNodeGenders[rightPath] : undefined;
-    const canBreedPair = Boolean(
-      hasChildren &&
+    const readyParentCount = (leftChecked && leftGender ? 1 : 0) + (rightChecked && rightGender ? 1 : 0);
+    const isParentPairReady = Boolean(
       node.kind === 'monster' &&
+      hasChildren &&
       leftChecked &&
       rightChecked &&
       leftGender &&
       rightGender &&
-      leftGender !== rightGender &&
+      leftGender !== rightGender
+    );
+    const stateClass = (isChecked && isSiblingChecked)
+      ? 'state-paired'
+      : selectedGender
+        ? `state-${selectedGender}`
+        : (node.kind === 'monster' && readyParentCount === 1)
+          ? 'state-parent-partial'
+          : isParentPairReady
+            ? 'state-parent-ready'
+            : 'state-baseline';
+    const canBreedPair = Boolean(
+      hasChildren &&
+      node.kind === 'monster' &&
+      isParentPairReady &&
       onBreedPair
     );
 
@@ -274,6 +285,9 @@ export const BreedingPlan: React.FC<BreedingPlanProps> = ({
             <span>{node.kind === 'monster' ? renderMonsterLink(node.value) : node.value}</span>
             {customName?.trim() && (
               <span className="tree-assigned-name">[{customName.trim()}]</span>
+            )}
+            {node.kind === 'monster' && hasChildren && (
+              <span className="tree-depth-indicator">Depth: {depth}</span>
             )}
           </div>
           {node.kind === 'monster' && renderNativeMovePills(node.value)}

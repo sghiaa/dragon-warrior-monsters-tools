@@ -128,7 +128,8 @@ describe('BreedingPlan tree interactions', () => {
   });
 
   const getNodeByLabel = (label: string) => {
-    const textNode = screen.getByText(label);
+    const planTree = screen.getByText('Breeding Tree').closest('.plan-tree') as HTMLElement;
+    const textNode = within(planTree).getByText(label);
     return textNode.closest('.tree-node') as HTMLElement;
   };
 
@@ -295,5 +296,119 @@ describe('BreedingPlan tree interactions', () => {
 
     const pairButton = screen.getByTestId('breed-pair-root');
     expect(pairButton).toBeDisabled();
+  });
+
+  it('keeps parent monster baseline when no parent nodes are ready', () => {
+    render(<BreedingPlan plan={buildTreePlan()} goalStateKey="goal::parent-baseline" />);
+    expect(getNodeByLabel('darkdrium')).toHaveClass('state-baseline');
+  });
+
+  it('marks parent monster partial-ready when exactly one parent is ready', () => {
+    render(<BreedingPlan plan={buildTreePlan()} goalStateKey="goal::parent-partial" />);
+
+    const beastCheckbox = screen.getByText('Any Beast').closest('.tree-check')?.querySelector('input');
+    fireEvent.click(beastCheckbox as Element);
+    fireEvent.click(screen.getByRole('button', { name: 'Male' }));
+
+    expect(getNodeByLabel('darkdrium')).toHaveClass('state-parent-partial');
+  });
+
+  it('marks parent monster ready when both parents are ready with opposite genders', () => {
+    render(<BreedingPlan plan={buildTreePlan()} goalStateKey="goal::parent-ready" />);
+
+    const beastCheckbox = screen.getByText('Any Beast').closest('.tree-check')?.querySelector('input');
+    fireEvent.click(beastCheckbox as Element);
+    fireEvent.click(screen.getByRole('button', { name: 'Male' }));
+
+    const slimeCheckbox = screen.getByText('Any Slime').closest('.tree-check')?.querySelector('input');
+    fireEvent.click(slimeCheckbox as Element);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Female' })[1]);
+
+    expect(getNodeByLabel('darkdrium')).toHaveClass('state-parent-ready');
+  });
+
+  it('does not override checked node state with parent-readiness coloring', () => {
+    render(<BreedingPlan plan={buildTreePlan()} goalStateKey="goal::parent-checked-precedence" />);
+
+    const beastCheckbox = screen.getByText('Any Beast').closest('.tree-check')?.querySelector('input');
+    fireEvent.click(beastCheckbox as Element);
+    fireEvent.click(screen.getByRole('button', { name: 'Male' }));
+
+    const slimeCheckbox = screen.getByText('Any Slime').closest('.tree-check')?.querySelector('input');
+    fireEvent.click(slimeCheckbox as Element);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Female' })[1]);
+
+    const planTree = screen.getByText('Breeding Tree').closest('.plan-tree') as HTMLElement;
+    const rootCheckbox = within(planTree).getByText('darkdrium').closest('.tree-check')?.querySelector('input');
+    fireEvent.click(rootCheckbox as Element);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Male' })[0]);
+
+    const rootNode = getNodeByLabel('darkdrium');
+    expect(rootNode).toHaveClass('state-male');
+    expect(rootNode).not.toHaveClass('state-parent-ready');
+    expect(rootNode).not.toHaveClass('state-parent-partial');
+  });
+
+  it('shows depth indicator on monster nodes with parents', () => {
+    render(<BreedingPlan plan={buildTreePlan()} goalStateKey="goal::depth-root" />);
+    expect(getNodeByLabel('darkdrium')).toHaveTextContent('Depth: 0');
+  });
+
+  it('increments depth down the tree for breedable monster nodes', () => {
+    const deepPlan: BreedingPlanType = {
+      ...buildTreePlan(),
+      tree: {
+        kind: 'monster',
+        value: 'darkdrium',
+        left: {
+          kind: 'monster',
+          value: 'esterk',
+          left: {
+            kind: 'monster',
+            value: 'left_parent',
+            left: { kind: 'family', value: 'Any Beast' },
+            right: { kind: 'family', value: 'Any Slime' }
+          },
+          right: { kind: 'family', value: 'Any Slime' }
+        },
+        right: { kind: 'family', value: 'Any Devil' }
+      }
+    };
+
+    render(<BreedingPlan plan={deepPlan} goalStateKey="goal::depth-deep" />);
+
+    expect(getNodeByLabel('darkdrium')).toHaveTextContent('Depth: 0');
+    expect(getNodeByLabel('esterk')).toHaveTextContent('Depth: 1');
+    expect(getNodeByLabel('left_parent')).toHaveTextContent('Depth: 2');
+  });
+
+  it('does not show depth indicator on family leaf nodes', () => {
+    render(<BreedingPlan plan={buildTreePlan()} goalStateKey="goal::depth-family" />);
+    expect(getNodeByLabel('Any Beast')).not.toHaveTextContent('Depth:');
+    expect(getNodeByLabel('Any Slime')).not.toHaveTextContent('Depth:');
+  });
+
+  it('keeps depth indicators visible on remaining nodes after branch collapse', () => {
+    const deepPlan: BreedingPlanType = {
+      ...buildTreePlan(),
+      tree: {
+        kind: 'monster',
+        value: 'darkdrium',
+        left: {
+          kind: 'monster',
+          value: 'esterk',
+          left: { kind: 'family', value: 'Any Beast' },
+          right: { kind: 'family', value: 'Any Slime' }
+        },
+        right: { kind: 'family', value: 'Any Devil' }
+      }
+    };
+
+    render(<BreedingPlan plan={deepPlan} goalStateKey="goal::depth-collapse" />);
+    const esterkCheckbox = screen.getByText('esterk').closest('.tree-check')?.querySelector('input');
+    fireEvent.click(esterkCheckbox as Element);
+
+    expect(getNodeByLabel('darkdrium')).toHaveTextContent('Depth: 0');
+    expect(getNodeByLabel('esterk')).toHaveTextContent('Depth: 1');
   });
 });
