@@ -182,6 +182,18 @@ jest.mock('../data/monsters', () => {
       defenseGrowth: 1,
       agilityGrowth: 1,
       intelligenceGrowth: 1
+    },
+    {
+      id: 'deterministicmon',
+      name: 'DeterministicMon',
+      family: 'Boss',
+      rank: 1,
+      hpGrowth: 1,
+      mpGrowth: 1,
+      attackGrowth: 1,
+      defenseGrowth: 1,
+      agilityGrowth: 1,
+      intelligenceGrowth: 1
     }
   ];
 
@@ -198,6 +210,9 @@ jest.mock('../data/monsters', () => {
     { result: 'B2', parent1: 'Any Dragon', parent2: 'Any Slime' },
     { result: 'ChoiceMonster', parent1: 'A1', parent2: 'A2' },
     { result: 'ChoiceMonster', parent1: 'B1', parent2: 'B2' },
+    // Intentionally ordered opposite of preferred lexical parent pair.
+    { result: 'DeterministicMon', parent1: 'Any Dragon', parent2: 'Any Bug' },
+    { result: 'DeterministicMon', parent1: 'Any Beast', parent2: 'Any Slime' },
     { result: 'Dracolord1', parent1: 'Any Slime', parent2: 'Any Dragon' },
     { result: 'Darkhorn', parent1: 'Any Boss', parent2: 'Any Beast' }
   ];
@@ -299,6 +314,19 @@ describe('BreedingPathfinder', () => {
       parent1: 'b1',
       parent2: 'b2',
       result: 'choicemonster'
+    });
+  });
+
+  it('uses a deterministic lexical tie-break when recipe costs are otherwise identical', () => {
+    const pathfinder = new BreedingPathfinder(emptyOwned);
+    const plan = pathfinder.findBreedingPath('deterministicmon');
+
+    expect(plan.isPossible).toBe(true);
+    expect(plan.steps).toHaveLength(1);
+    expect(plan.steps[0]).toMatchObject({
+      parent1: 'Any Beast',
+      parent2: 'Any Slime',
+      result: 'deterministicmon'
     });
   });
 });

@@ -321,7 +321,11 @@ export const computeAutoAssignments = (
           if (rankA !== rankB) {
             return rankB - rankA;
           }
-          return a.monsterId.localeCompare(b.monsterId);
+          const byMonster = a.monsterId.localeCompare(b.monsterId);
+          if (byMonster !== 0) {
+            return byMonster;
+          }
+          return a.id.localeCompare(b.id);
         });
 
     const slotCandidates = candidatesFor(slot);
@@ -347,7 +351,9 @@ export const computeAutoAssignments = (
           continue;
         }
         const score = (getMonsterById(left.monsterId)?.rank || 0) + (getMonsterById(right.monsterId)?.rank || 0);
-        if (!best || score > best.score) {
+        const pairKey = `${left.id}::${right.id}`;
+        const bestPairKey = best ? `${best.left.id}::${best.right.id}` : '';
+        if (!best || score > best.score || (score === best.score && pairKey.localeCompare(bestPairKey) < 0)) {
           best = { left, right, score };
         }
       }
@@ -386,7 +392,11 @@ export const computeAutoAssignments = (
         if (rankA !== rankB) {
           return rankB - rankA;
         }
-        return a.monsterId.localeCompare(b.monsterId);
+        const byMonster = a.monsterId.localeCompare(b.monsterId);
+        if (byMonster !== 0) {
+          return byMonster;
+        }
+        return a.id.localeCompare(b.id);
       });
 
     if (matchingOwned.length > 0) {

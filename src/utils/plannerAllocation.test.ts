@@ -524,4 +524,40 @@ describe('computeAutoAssignments', () => {
     expect(goal.checkedNodeNames['root.R']).toBe('SafeBeast');
     expect(goal.checkedNodeNames['root.R']).not.toBe('Ali');
   });
+
+  it('is deterministic for equivalent candidates regardless of stable input order', () => {
+    const selectedGoals = ['goal_landowl'];
+    const breedingPlans: Record<string, BreedingPlan> = {
+      goal_landowl: {
+        targetMonster: 'goal_landowl',
+        steps: [],
+        isPossible: true,
+        missingMonsters: [],
+        tree: {
+          kind: 'monster',
+          value: 'landowl',
+          left: { kind: 'monster', value: 'bullbird' },
+          right: { kind: 'family', value: 'Any Devil' }
+        }
+      }
+    };
+
+    const ownedOrderA: OwnedMonster[] = [
+      { id: 'bullbird-1', monsterId: 'bullbird', gender: 'male', nickname: 'Bull' },
+      { id: 'dev-2', monsterId: 'devila', gender: 'female', nickname: 'DevTwo' },
+      { id: 'dev-1', monsterId: 'devila', gender: 'female', nickname: 'DevOne' }
+    ];
+    const ownedOrderB: OwnedMonster[] = [
+      { id: 'bullbird-1', monsterId: 'bullbird', gender: 'male', nickname: 'Bull' },
+      { id: 'dev-1', monsterId: 'devila', gender: 'female', nickname: 'DevOne' },
+      { id: 'dev-2', monsterId: 'devila', gender: 'female', nickname: 'DevTwo' }
+    ];
+
+    const a = computeAutoAssignments(selectedGoals, breedingPlans, ownedOrderA);
+    const b = computeAutoAssignments(selectedGoals, breedingPlans, ownedOrderB);
+
+    expect(a.goal_landowl.checkedNodes).toEqual(b.goal_landowl.checkedNodes);
+    expect(a.goal_landowl.checkedNodeNames['root.R']).toBe('DevOne');
+    expect(b.goal_landowl.checkedNodeNames['root.R']).toBe('DevOne');
+  });
 });

@@ -20,6 +20,7 @@ interface PlanWithCost {
   cost: number;
   remainingCost: number;
   ownedPreference: number;
+  signature?: string;
 }
 
 interface BreedingPathfinderOptions {
@@ -235,16 +236,10 @@ export class BreedingPathfinder {
           ((this.ownedByMonster.get(monsterId) || 0) > 0 ? 10 : 0)
       };
       current.remainingCost = this.sumRequirements(this.collectRemainingRequirements(current.node));
+      current.signature = this.getPlanSignature(current.node);
 
       if (
-        !best ||
-        current.cost < best.cost ||
-        (current.cost === best.cost && current.remainingCost < best.remainingCost) ||
-        (
-          current.cost === best.cost &&
-          current.remainingCost === best.remainingCost &&
-          current.ownedPreference > best.ownedPreference
-        )
+        !best || this.isBetterPlan(current, best)
       ) {
         best = current;
       }
@@ -418,6 +413,31 @@ export class BreedingPathfinder {
 
   private sumRequirements(requirements: Record<string, number>): number {
     return Object.values(requirements).reduce((sum, count) => sum + count, 0);
+  }
+
+  private isBetterPlan(current: PlanWithCost, best: PlanWithCost): boolean {
+    if (current.cost !== best.cost) {
+      return current.cost < best.cost;
+    }
+    if (current.remainingCost !== best.remainingCost) {
+      return current.remainingCost < best.remainingCost;
+    }
+    if (current.ownedPreference !== best.ownedPreference) {
+      return current.ownedPreference > best.ownedPreference;
+    }
+    const currentSignature = current.signature || this.getPlanSignature(current.node);
+    const bestSignature = best.signature || this.getPlanSignature(best.node);
+    return currentSignature.localeCompare(bestSignature) < 0;
+  }
+
+  private getPlanSignature(node: PlanNode): string {
+    if (node.type === 'family') {
+      return `F:${node.family}`;
+    }
+    if (!node.parent1 || !node.parent2) {
+      return `M:${node.id}`;
+    }
+    return `M:${node.id}(${this.getPlanSignature(node.parent1)}|${this.getPlanSignature(node.parent2)})`;
   }
 
   private toBreedingTreeNode(node: PlanNode): BreedingTreeNode {
