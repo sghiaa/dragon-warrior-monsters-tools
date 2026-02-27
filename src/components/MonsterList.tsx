@@ -3,6 +3,7 @@ import { BreedingPlan, BreedingTreeNode, Gender, OwnedKey, OwnedMonster } from '
 import { MONSTERS, getBreedingResult, getMonsterById } from '../data/monsters';
 import { KEY_DESCRIPTORS, KEY_FAMILY_BY_CODE, KEY_FAMILY_OPTIONS } from '../data/keys';
 import { loadPlannerProgress } from '../utils/storage';
+import { optimizeOwnedKeysForCoverage } from '../utils/keyOptimizer';
 import { Plus, Trash2 } from 'lucide-react';
 
 interface MonsterListProps {
@@ -634,6 +635,13 @@ export const MonsterList: React.FC<MonsterListProps> = ({
       });
   }, [selectedGoals, ownedKeys, breedingPlans, plannerSeedMonsterIds]);
 
+  const keyOptimization = useMemo(
+    () => optimizeOwnedKeysForCoverage(ownedKeys),
+    [ownedKeys]
+  );
+
+  const formatKeyName = (key: OwnedKey) => `${key.descriptor} ${key.family}`;
+
   return (
     <div className="monster-list">
       <div className="stable-panel">
@@ -665,6 +673,100 @@ export const MonsterList: React.FC<MonsterListProps> = ({
                 </span>
               );
             })}
+          </div>
+        )}
+        {isBreedOpen && (
+          <div className="stable-add-panel breed-panel">
+            <h3>Breed Monsters</h3>
+            <div className="add-form-grid breed-form-grid" data-testid="breed-form-grid">
+              <div className="breed-field-group">
+                <label htmlFor="breed-pedigree-select">Pedigree</label>
+                <input
+                  aria-label="Pedigree Filter"
+                  type="text"
+                  value={pedigreeQuery}
+                  onChange={(e) => setPedigreeQuery(e.target.value)}
+                  placeholder="Filter pedigree monsters..."
+                  className="search-input"
+                />
+                <select
+                  id="breed-pedigree-select"
+                  aria-label="Pedigree"
+                  value={selectedPedigreeId}
+                  onChange={(e) => {
+                    setSelectedPedigreeId(e.target.value);
+                    setSelectedMateId('');
+                  }}
+                  className="family-filter"
+                >
+                  <option value="">Select pedigree</option>
+                  {filteredPedigreeCandidates.map((owned) => (
+                    <option key={owned.id} value={owned.id}>
+                      {formatOwnedOption(owned)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="breed-field-group">
+                <label htmlFor="breed-mate-select">Mate</label>
+                <input
+                  aria-label="Mate Filter"
+                  type="text"
+                  value={mateQuery}
+                  onChange={(e) => setMateQuery(e.target.value)}
+                  placeholder="Filter mate monsters..."
+                  className="search-input"
+                  disabled={!selectedPedigree}
+                />
+                <select
+                  id="breed-mate-select"
+                  aria-label="Mate"
+                  value={selectedMateId}
+                  onChange={(e) => setSelectedMateId(e.target.value)}
+                  className="family-filter"
+                  disabled={!selectedPedigree}
+                >
+                  <option value="">
+                    {selectedPedigree ? `Select ${oppositeGender || ''} mate` : 'Select pedigree first'}
+                  </option>
+                  {filteredMateCandidates.map((owned) => (
+                    <option key={owned.id} value={owned.id}>
+                      {formatOwnedOption(owned)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {selectedPedigree && selectedMate && (
+              <div>
+                <h4>Result Preview</h4>
+                {breedingPreview ? (
+                  <p>{getMonsterById(breedingPreview.result)?.name || breedingPreview.result}</p>
+                ) : (
+                  <p>No breeding result for this pair.</p>
+                )}
+              </div>
+            )}
+
+            <div className="add-form-grid breed-actions" data-testid="breed-actions">
+              <button
+                type="button"
+                className="add-stable-btn"
+                onClick={handleConfirmBreed}
+                disabled={!breedingPreview}
+              >
+                Confirm Breed
+              </button>
+              <button
+                type="button"
+                className="add-stable-btn breed-cancel-btn"
+                onClick={resetBreedDialog}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         )}
         {ownedMonsters.length === 0 ? (
@@ -704,101 +806,6 @@ export const MonsterList: React.FC<MonsterListProps> = ({
           </div>
         )}
       </div>
-
-      {isBreedOpen && (
-        <div className="stable-add-panel breed-panel">
-          <h3>Breed Monsters</h3>
-          <div className="add-form-grid breed-form-grid" data-testid="breed-form-grid">
-            <div className="breed-field-group">
-              <label htmlFor="breed-pedigree-select">Pedigree</label>
-              <input
-                aria-label="Pedigree Filter"
-                type="text"
-                value={pedigreeQuery}
-                onChange={(e) => setPedigreeQuery(e.target.value)}
-                placeholder="Filter pedigree monsters..."
-                className="search-input"
-              />
-              <select
-                id="breed-pedigree-select"
-                aria-label="Pedigree"
-                value={selectedPedigreeId}
-                onChange={(e) => {
-                  setSelectedPedigreeId(e.target.value);
-                  setSelectedMateId('');
-                }}
-                className="family-filter"
-              >
-                <option value="">Select pedigree</option>
-                {filteredPedigreeCandidates.map((owned) => (
-                  <option key={owned.id} value={owned.id}>
-                    {formatOwnedOption(owned)}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="breed-field-group">
-              <label htmlFor="breed-mate-select">Mate</label>
-              <input
-                aria-label="Mate Filter"
-                type="text"
-                value={mateQuery}
-                onChange={(e) => setMateQuery(e.target.value)}
-                placeholder="Filter mate monsters..."
-                className="search-input"
-                disabled={!selectedPedigree}
-              />
-              <select
-                id="breed-mate-select"
-                aria-label="Mate"
-                value={selectedMateId}
-                onChange={(e) => setSelectedMateId(e.target.value)}
-                className="family-filter"
-                disabled={!selectedPedigree}
-              >
-                <option value="">
-                  {selectedPedigree ? `Select ${oppositeGender || ''} mate` : 'Select pedigree first'}
-                </option>
-                {filteredMateCandidates.map((owned) => (
-                  <option key={owned.id} value={owned.id}>
-                    {formatOwnedOption(owned)}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {selectedPedigree && selectedMate && (
-            <div>
-              <h4>Result Preview</h4>
-              {breedingPreview ? (
-                <p>{getMonsterById(breedingPreview.result)?.name || breedingPreview.result}</p>
-              ) : (
-                <p>No breeding result for this pair.</p>
-              )}
-            </div>
-          )}
-
-          <div className="add-form-grid breed-actions" data-testid="breed-actions">
-            <button
-              type="button"
-              className="add-stable-btn"
-              onClick={handleConfirmBreed}
-              disabled={!breedingPreview}
-            >
-              Confirm Breed
-            </button>
-            <button
-              type="button"
-              className="add-stable-btn breed-cancel-btn"
-              onClick={resetBreedDialog}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
 
       <div className="stable-add-panel">
         <h3>Add Monster to Stable</h3>
@@ -970,6 +977,26 @@ export const MonsterList: React.FC<MonsterListProps> = ({
             </div>
           )}
         </div>
+        {ownedKeys.length > 0 && (
+          <div className="key-suggestions">
+            <h4>Optimal Key Set</h4>
+            <p>
+              <strong>Coverage:</strong> {keyOptimization.coverageCount} / {keyOptimization.targetCoverageCount}
+            </p>
+            <p data-testid="optimized-keep-keys">
+              <strong>Keep:</strong>{' '}
+              {keyOptimization.keepKeys.length > 0
+                ? keyOptimization.keepKeys.map(formatKeyName).join(', ')
+                : 'None'}
+            </p>
+            <p data-testid="optimized-drop-keys">
+              <strong>Drop:</strong>{' '}
+              {keyOptimization.dropKeys.length > 0
+                ? keyOptimization.dropKeys.map(formatKeyName).join(', ')
+                : 'None'}
+            </p>
+          </div>
+        )}
 
         {selectedGoals.length > 0 && (
           <div className="key-suggestions">

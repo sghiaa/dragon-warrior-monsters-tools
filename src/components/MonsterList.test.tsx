@@ -374,4 +374,50 @@ describe('MonsterList key family highlighting', () => {
     expect(within(actions).getByRole('button', { name: 'Confirm Breed' })).toBeInTheDocument();
     expect(within(actions).getByRole('button', { name: 'Cancel' })).toHaveClass('breed-cancel-btn');
   });
+
+  it('renders key optimization keep/drop suggestion', () => {
+    render(
+      <MonsterList
+        {...baseProps}
+        ownedMonsters={[]}
+        ownedKeys={[
+          { id: 'k1', descriptor: 'Plain', family: 'Beast' },
+          { id: 'k2', descriptor: 'Blue', family: 'Bug' },
+          { id: 'k3', descriptor: 'Last', family: 'Grass' }
+        ]}
+      />
+    );
+
+    expect(screen.getByText('Optimal Key Set')).toBeInTheDocument();
+    expect(screen.getByText(/Coverage:/)).toBeInTheDocument();
+    expect(screen.getByTestId('optimized-keep-keys')).toHaveTextContent('Last Grass');
+    expect(screen.getByTestId('optimized-drop-keys')).toHaveTextContent('Plain Beast');
+    expect(screen.getByTestId('optimized-drop-keys')).toHaveTextContent('Blue Bug');
+  });
+
+  it('updates key optimization as key list changes', () => {
+    const { rerender } = render(
+      <MonsterList
+        {...baseProps}
+        ownedMonsters={[]}
+        ownedKeys={[
+          { id: 'k1', descriptor: 'Last', family: 'Grass' },
+          { id: 'k2', descriptor: 'Plain', family: 'Beast' }
+        ]}
+      />
+    );
+
+    expect(screen.getByTestId('optimized-drop-keys')).toHaveTextContent('Plain Beast');
+
+    rerender(
+      <MonsterList
+        {...baseProps}
+        ownedMonsters={[]}
+        ownedKeys={[{ id: 'k1', descriptor: 'Last', family: 'Grass' }]}
+      />
+    );
+
+    expect(screen.getByTestId('optimized-drop-keys')).toHaveTextContent('None');
+    expect(screen.getByTestId('optimized-keep-keys')).toHaveTextContent('Last Grass');
+  });
 });
