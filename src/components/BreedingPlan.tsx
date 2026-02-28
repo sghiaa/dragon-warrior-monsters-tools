@@ -89,15 +89,24 @@ export const BreedingPlan: React.FC<BreedingPlanProps> = ({
     return computeAdjustedRemaining(plan.baseRequirements, plan.remainingRequirements, checkedCoverage);
   }, [plan.baseRequirements, plan.remainingRequirements, checkedCoverage]);
 
-  const adjustedRemainingTotal = useMemo(() => sumRequirements(adjustedRemaining), [adjustedRemaining]);
-
   const remainingGenderRequirementsByFamily = useMemo(() => {
     return computeRemainingGenderRequirements(plan.tree, checkedNodes, checkedNodeGenders);
   }, [plan.tree, checkedNodes, checkedNodeGenders]);
 
   const combinedRemainingByFamilyGender = useMemo(() => {
-    return combineRemainingByFamilyGender(remainingGenderRequirementsByFamily, adjustedRemaining);
+    return combineRemainingByFamilyGender(
+      remainingGenderRequirementsByFamily,
+      adjustedRemaining,
+      { useTreeFallbackWhenAdjustedEmpty: true }
+    );
   }, [remainingGenderRequirementsByFamily, adjustedRemaining]);
+
+  const adjustedRemainingTotal = useMemo(
+    () => sumRequirements(Object.fromEntries(
+      Object.entries(combinedRemainingByFamilyGender).map(([family, counts]) => [family, counts.total])
+    )),
+    [combinedRemainingByFamilyGender]
+  );
 
   const remainingMoves = useMemo(() => {
     if (!showNativeMoves) {

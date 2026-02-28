@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { BreedingPlan as BreedingPlanType } from '../types/monster';
 import { BreedingPlan } from './BreedingPlan';
 
@@ -97,6 +97,163 @@ describe('BreedingPlan remaining summary', () => {
     const remainingLine = getRemainingLine();
     expect(remainingLine).toHaveTextContent(
       'Remaining after owned + checked nodes: 1 (1 Slime (1 unassigned))'
+    );
+  });
+
+  it('caps rendered gender totals to the adjusted remaining requirements', async () => {
+    render(
+      <BreedingPlan
+        plan={buildPlan({
+          baseRequirements: { Beast: 2 },
+          remainingRequirements: { Beast: 1 },
+          totalBaseRequired: 2,
+          totalRemaining: 1,
+          tree: {
+            kind: 'monster',
+            value: 'darkdrium',
+            left: { kind: 'family', value: 'Any Beast' },
+            right: {
+              kind: 'monster',
+              value: 'esterk',
+              left: { kind: 'family', value: 'Any Beast' },
+              right: { kind: 'family', value: 'Any Slime' }
+            }
+          }
+        })}
+        goalStateKey="goal::cap-gender-totals"
+        autoAssignment={{
+          checkedNodes: ['root.R.R'],
+          checkedNodeGenders: { 'root.L': 'male', 'root.R.L': 'female' },
+          checkedNodeNames: {}
+        }}
+      />
+    );
+
+    await waitFor(() => {
+      const remainingLine = getRemainingLine();
+      expect(remainingLine).toHaveTextContent(
+        'Remaining after owned + checked nodes: 1 (1 Beast (1 male))'
+      );
+    });
+  });
+
+  it('renders non-zero remaining from tree leaves when remainingRequirements is empty', () => {
+    render(
+      <BreedingPlan
+        plan={buildPlan({
+          baseRequirements: {},
+          remainingRequirements: {},
+          totalBaseRequired: 0,
+          totalRemaining: 0,
+          tree: {
+            kind: 'monster',
+            value: 'darkdrium',
+            left: { kind: 'family', value: 'Any Beast' },
+            right: { kind: 'family', value: 'Any Slime' }
+          }
+        })}
+        goalStateKey="goal::tree-leaf-fallback"
+      />
+    );
+
+    const remainingLine = getRemainingLine();
+    expect(remainingLine).toHaveTextContent(
+      'Remaining after owned + checked nodes: 2 (1 Beast (1 unassigned), 1 Slime (1 unassigned))'
+    );
+  });
+
+  it('shows male beast remaining when unchecked beast leaf is gender-constrained male', () => {
+    render(
+      <BreedingPlan
+        plan={buildPlan({
+          baseRequirements: { Beast: 1 },
+          remainingRequirements: {},
+          totalBaseRequired: 1,
+          totalRemaining: 0,
+          tree: {
+            kind: 'monster',
+            value: 'darkhorn',
+            left: { kind: 'family', value: 'Any Beast' },
+            right: { kind: 'monster', value: 'dracolord1' }
+          }
+        })}
+        goalStateKey="goal::male-beast-remaining"
+        autoAssignment={{
+          checkedNodes: [],
+          checkedNodeGenders: { 'root.L': 'male' },
+          checkedNodeNames: {}
+        }}
+      />
+    );
+
+    const remainingLine = getRemainingLine();
+    expect(remainingLine).toHaveTextContent(
+      'Remaining after owned + checked nodes: 1 (1 Beast (1 male))'
+    );
+  });
+
+  it('still shows constrained remaining leaf even when remainingRequirements reports zero', () => {
+    render(
+      <BreedingPlan
+        plan={buildPlan({
+          baseRequirements: { Beast: 1 },
+          remainingRequirements: { Beast: 0 },
+          totalBaseRequired: 1,
+          totalRemaining: 0,
+          tree: {
+            kind: 'monster',
+            value: 'darkhorn',
+            left: { kind: 'family', value: 'Any Beast' },
+            right: { kind: 'monster', value: 'dracolord1' }
+          }
+        })}
+        goalStateKey="goal::male-beast-zero-remaining"
+        autoAssignment={{
+          checkedNodes: [],
+          checkedNodeGenders: { 'root.L': 'male' },
+          checkedNodeNames: {}
+        }}
+      />
+    );
+
+    const remainingLine = getRemainingLine();
+    expect(remainingLine).toHaveTextContent(
+      'Remaining after owned + checked nodes: 1 (1 Beast (1 male))'
+    );
+  });
+
+  it('keeps male beast remaining when checked sibling branch zeroes family counts', () => {
+    render(
+      <BreedingPlan
+        plan={buildPlan({
+          baseRequirements: { Beast: 1, Dragon: 1 },
+          remainingRequirements: {},
+          totalBaseRequired: 2,
+          totalRemaining: 0,
+          tree: {
+            kind: 'monster',
+            value: 'darkhorn',
+            left: { kind: 'family', value: 'Any Beast' },
+            right: {
+              kind: 'monster',
+              value: 'dracolord1',
+              left: { kind: 'family', value: 'Any Beast' },
+              right: { kind: 'family', value: 'Any Dragon' }
+            }
+          }
+        })}
+        goalStateKey="goal::sibling-consumption-bug"
+        autoAssignment={{
+          checkedNodes: ['root.R'],
+          checkedNodeGenders: { 'root.R': 'female', 'root.L': 'male' },
+          checkedNodeNames: { 'root.R': 'DloF1' }
+        }}
+      />
+    );
+
+    const remainingLine = getRemainingLine();
+    expect(remainingLine).toHaveTextContent(
+      'Remaining after owned + checked nodes: 1 (1 Beast (1 male))'
     );
   });
 });

@@ -15,7 +15,26 @@ jest.mock('../data/monsters', () => ({
     { id: 'spotslime', family: 'Slime' },
     { id: 'bar', family: 'Beast' },
     { id: 'foo', family: 'Beast' },
-    { id: 'bullbird', family: 'Bird' }
+    { id: 'bullbird', family: 'Bird' },
+    { id: 'gorago', family: 'Boss' },
+    { id: 'darkhorn', family: 'Boss' },
+    { id: 'dracolord1', family: 'Boss' },
+    { id: 'orochi', family: 'Dragon' },
+    { id: 'beavern', family: 'Beast' },
+    { id: 'deathmore3', family: 'Boss' },
+    { id: '1eyeclown', family: 'Devil' },
+    { id: 'orc', family: 'Devil' },
+    { id: 'madmirror', family: 'Material' },
+    { id: 'babble', family: 'Slime' },
+    { id: 'snaily', family: 'Slime' },
+    { id: 'grakos', family: 'Water' },
+    { id: 'antbear', family: 'Beast' },
+    { id: 'beastnite', family: 'Beast' },
+    { id: 'fairydrak', family: 'Dragon' },
+    { id: 'facer', family: 'Material' },
+    { id: 'spikyboy', family: 'Material' },
+    { id: 'granslime', family: 'Slime' },
+    { id: 'deadnite', family: 'Undead' }
   ],
   RAW_BREEDING_PAIRS: [
     { result: 'landowl', parent1: 'bullbird', parent2: 'Any Devil' },
@@ -35,7 +54,26 @@ jest.mock('../data/monsters', () => ({
       slabbit: 'Slime',
       spotslime: 'Slime',
       bar: 'Beast',
-      foo: 'Beast'
+      foo: 'Beast',
+      gorago: 'Boss',
+      darkhorn: 'Boss',
+      dracolord1: 'Boss',
+      orochi: 'Dragon',
+      beavern: 'Beast',
+      deathmore3: 'Boss',
+      '1eyeclown': 'Devil',
+      orc: 'Devil',
+      madmirror: 'Material',
+      babble: 'Slime',
+      snaily: 'Slime',
+      grakos: 'Water',
+      antbear: 'Beast',
+      beastnite: 'Beast',
+      fairydrak: 'Dragon',
+      facer: 'Material',
+      spikyboy: 'Material',
+      granslime: 'Slime',
+      deadnite: 'Undead'
     };
     const rankMap: Record<string, number> = {
       metalking: 8,
@@ -559,5 +597,96 @@ describe('computeAutoAssignments', () => {
     expect(a.goal_landowl.checkedNodes).toEqual(b.goal_landowl.checkedNodes);
     expect(a.goal_landowl.checkedNodeNames['root.R']).toBe('DevOne');
     expect(b.goal_landowl.checkedNodeNames['root.R']).toBe('DevOne');
+  });
+
+  it('returns identical assignments on repeated runs for identical inputs', () => {
+    const selectedGoals = ['goal_landowl'];
+    const breedingPlans: Record<string, BreedingPlan> = {
+      goal_landowl: {
+        targetMonster: 'goal_landowl',
+        steps: [],
+        isPossible: true,
+        missingMonsters: [],
+        tree: {
+          kind: 'monster',
+          value: 'landowl',
+          left: { kind: 'monster', value: 'bullbird' },
+          right: { kind: 'family', value: 'Any Devil' }
+        }
+      }
+    };
+
+    const owned: OwnedMonster[] = [
+      { id: 'bullbird-1', monsterId: 'bullbird', gender: 'male', nickname: 'Bull' },
+      { id: 'dev-1', monsterId: 'devila', gender: 'female', nickname: 'DevOne' },
+      { id: 'dev-2', monsterId: 'devila', gender: 'female', nickname: 'DevTwo' }
+    ];
+
+    const first = computeAutoAssignments(selectedGoals, breedingPlans, owned);
+    const second = computeAutoAssignments(selectedGoals, breedingPlans, owned);
+
+    expect(first).toEqual(second);
+  });
+
+  it('uses screenshot stable snapshot and infers male for unchecked Any Beast under Darkhorn', () => {
+    const selectedGoals = ['goal_gorago'];
+    const breedingPlans: Record<string, BreedingPlan> = {
+      goal_gorago: {
+        targetMonster: 'gorago',
+        steps: [],
+        isPossible: true,
+        missingMonsters: [],
+        tree: {
+          kind: 'monster',
+          value: 'gorago',
+          left: {
+            kind: 'monster',
+            value: 'darkhorn',
+            left: { kind: 'family', value: 'Any Beast' },
+            right: { kind: 'monster', value: 'dracolord1' }
+          },
+          right: { kind: 'monster', value: 'orochi' }
+        }
+      }
+    };
+
+    const owned: OwnedMonster[] = [
+      { id: 'egg-1', monsterId: 'spotslime', gender: 'male', nickname: 'Egg', isEgg: true },
+      { id: 'egg-2', monsterId: 'spotslime', gender: 'male', nickname: 'Egg', isEgg: true },
+      { id: 'egg-3', monsterId: 'deadnite', gender: 'male', nickname: 'Egg', isEgg: true },
+      { id: 'm-1', monsterId: 'beavern', gender: 'male', nickname: 'BeaM1' },
+      { id: 'm-2', monsterId: 'deathmore3', gender: 'male', nickname: 'Death' },
+      { id: 'm-3', monsterId: '1eyeclown', gender: 'male', nickname: '1EyM1' },
+      { id: 'm-4', monsterId: 'orc', gender: 'male', nickname: 'OrcM1' },
+      { id: 'm-5', monsterId: 'orochi', gender: 'male', nickname: 'OroM1' },
+      { id: 'm-6', monsterId: 'orochi', gender: 'male', nickname: 'OroM2' },
+      { id: 'm-7', monsterId: 'madmirror', gender: 'male', nickname: 'MadM1' },
+      { id: 'm-8', monsterId: 'babble', gender: 'male', nickname: 'BabM1' },
+      { id: 'm-9', monsterId: 'snaily', gender: 'male', nickname: 'SnaM1' },
+      { id: 'm-10', monsterId: 'grakos', gender: 'male', nickname: 'Grako' },
+      { id: 'f-1', monsterId: 'antbear', gender: 'female', nickname: 'AntF1' },
+      { id: 'f-2', monsterId: 'beastnite', gender: 'female', nickname: 'BeaF2' },
+      { id: 'f-3', monsterId: 'beastnite', gender: 'female', nickname: 'BeaF4' },
+      { id: 'f-4', monsterId: 'dracolord1', gender: 'female', nickname: 'DloF1' },
+      { id: 'f-5', monsterId: '1eyeclown', gender: 'female', nickname: '1EyF1' },
+      { id: 'f-6', monsterId: 'fairydrak', gender: 'female', nickname: 'FDrk4' },
+      { id: 'f-7', monsterId: 'fairydrak', gender: 'female', nickname: 'FDrk7' },
+      { id: 'f-8', monsterId: 'facer', gender: 'female', nickname: 'FacF1' },
+      { id: 'f-9', monsterId: 'spikyboy', gender: 'female', nickname: 'SpiF1' },
+      { id: 'f-10', monsterId: 'granslime', gender: 'female', nickname: 'Grann' },
+      { id: 'f-11', monsterId: 'spotslime', gender: 'female', nickname: 'SpoF1' }
+    ];
+
+    const assignments = computeAutoAssignments(selectedGoals, breedingPlans, owned);
+    const goal = assignments.goal_gorago;
+
+    expect(goal.checkedNodes).toContain('root.R');
+    expect(['OroM1', 'OroM2']).toContain(goal.checkedNodeNames['root.R']);
+    expect(goal.checkedNodeGenders['root.R']).toBe('male');
+    expect(goal.checkedNodes).toContain('root.L.R');
+    expect(goal.checkedNodeNames['root.L.R']).toBe('DloF1');
+    expect(goal.checkedNodeGenders['root.L.R']).toBe('female');
+    expect(goal.checkedNodes).not.toContain('root.L.L');
+    expect(goal.checkedNodeGenders['root.L.L']).toBe('male');
   });
 });
