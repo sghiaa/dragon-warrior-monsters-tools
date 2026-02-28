@@ -1,7 +1,7 @@
 import React from 'react';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MonsterList } from './MonsterList';
-import { loadPlannerProgress } from '../utils/storage';
+import { loadPlannerProgress, PlannerProgressState } from '../utils/storage';
 
 jest.mock('../data/monsters', () => ({
   MONSTERS: [
@@ -154,7 +154,7 @@ describe('MonsterList key family highlighting', () => {
             steps: [],
             missingMonsters: [],
             baseRequirements: { Dragon: 1, Plant: 1 },
-            remainingRequirements: {},
+            remainingRequirements: { Dragon: 1, Plant: 1 },
             tree: {
               kind: 'monster',
               value: 'darkdrium',
@@ -174,6 +174,137 @@ describe('MonsterList key family highlighting', () => {
     expect(suggestionCards).toHaveLength(1);
     expect(screen.getByTestId('key-suggestion-k1')).toHaveTextContent('Green Mine');
     expect(screen.queryByTestId('key-suggestion-k2')).not.toBeInTheDocument();
+  });
+
+  it('shows aggregated remaining totals with gender breakdown across all selected goals', () => {
+    render(
+      <MonsterList
+        {...baseProps}
+        selectedGoals={['goal_a', 'goal_b']}
+        breedingPlans={{
+          goal_a: {
+            targetMonster: 'goal_a',
+            isPossible: true,
+            steps: [],
+            missingMonsters: [],
+            baseRequirements: { Beast: 1, Slime: 1 },
+            remainingRequirements: { Beast: 1, Slime: 1 },
+            tree: {
+              kind: 'monster',
+              value: 'goal_a',
+              left: { kind: 'family', value: 'Any Beast' },
+              right: { kind: 'family', value: 'Any Slime' }
+            }
+          },
+          goal_b: {
+            targetMonster: 'goal_b',
+            isPossible: true,
+            steps: [],
+            missingMonsters: [],
+            baseRequirements: { Beast: 2 },
+            remainingRequirements: { Beast: 2 },
+            tree: {
+              kind: 'monster',
+              value: 'goal_b',
+              left: { kind: 'family', value: 'Any Beast' },
+              right: { kind: 'family', value: 'Any Beast' }
+            }
+          }
+        }}
+        ownedKeys={[
+          { id: 'k1', descriptor: 'Plain', family: 'Beast' }
+        ]}
+      />
+    );
+
+    expect(screen.getByText('Planner Totals for Current Goal(s)')).toBeInTheDocument();
+    const totalsLine = screen.getByText((_content, node) => {
+      if (!node || node.tagName !== 'P') {
+        return false;
+      }
+      return (node.textContent || '').includes('Remaining after checked nodes:');
+    });
+    expect(totalsLine).toHaveTextContent(
+      'Remaining after checked nodes: 4 (3 Beast (3 unassigned), 1 Slime (1 unassigned))'
+    );
+  });
+
+  it('uses checked planner progress when aggregating totals with male and female counts', () => {
+    mockedLoadPlannerProgress.mockImplementation((goalKey: string) => {
+      if (goalKey === 'goal_a::') {
+        const progress: PlannerProgressState = {
+          checkedNodes: ['root.L'],
+          checkedNodeGenders: {
+            'root.R': 'female'
+          },
+          checkedNodeNames: {},
+          lastUpdated: new Date().toISOString()
+        };
+        return progress;
+      }
+      if (goalKey === 'goal_b::') {
+        const progress: PlannerProgressState = {
+          checkedNodes: [],
+          checkedNodeGenders: {
+            'root.L': 'male'
+          },
+          checkedNodeNames: {},
+          lastUpdated: new Date().toISOString()
+        };
+        return progress;
+      }
+      return null;
+    });
+
+    render(
+      <MonsterList
+        {...baseProps}
+        selectedGoals={['goal_a', 'goal_b']}
+        breedingPlans={{
+          goal_a: {
+            targetMonster: 'goal_a',
+            isPossible: true,
+            steps: [],
+            missingMonsters: [],
+            baseRequirements: { Beast: 1, Slime: 1 },
+            remainingRequirements: { Beast: 1, Slime: 1 },
+            tree: {
+              kind: 'monster',
+              value: 'goal_a',
+              left: { kind: 'family', value: 'Any Beast' },
+              right: { kind: 'family', value: 'Any Slime' }
+            }
+          },
+          goal_b: {
+            targetMonster: 'goal_b',
+            isPossible: true,
+            steps: [],
+            missingMonsters: [],
+            baseRequirements: { Beast: 2 },
+            remainingRequirements: { Beast: 2 },
+            tree: {
+              kind: 'monster',
+              value: 'goal_b',
+              left: { kind: 'family', value: 'Any Beast' },
+              right: { kind: 'family', value: 'Any Beast' }
+            }
+          }
+        }}
+        ownedKeys={[
+          { id: 'k1', descriptor: 'Plain', family: 'Beast' }
+        ]}
+      />
+    );
+
+    const totalsLine = screen.getByText((_content, node) => {
+      if (!node || node.tagName !== 'P') {
+        return false;
+      }
+      return (node.textContent || '').includes('Remaining after checked nodes:');
+    });
+    expect(totalsLine).toHaveTextContent(
+      'Remaining after checked nodes: 3 (2 Beast (1 male, 1 unassigned), 1 Slime (1 female))'
+    );
   });
 
   it('shows eggs with hatch gender actions before nickname input is shown', () => {

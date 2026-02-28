@@ -1,6 +1,7 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import App from './App';
+import { UserMonster } from './types/monster';
 
 jest.mock('./data/monsters', () => ({
   __esModule: true,
@@ -40,6 +41,40 @@ jest.mock('./data/monsters', () => ({
       return { parent1, parent2, result: 'spotking' };
     }
     return undefined;
+  }
+}));
+
+jest.mock('./utils/breedingPathfinder', () => ({
+  BreedingPathfinder: class MockBreedingPathfinder {
+    userMonsters: UserMonster[];
+
+    constructor(userMonsters: UserMonster[]) {
+      this.userMonsters = userMonsters;
+    }
+
+    findBreedingPath(targetMonsterId: string) {
+      const slimeCount = this.userMonsters
+        .filter((monster) => monster.monsterId === 'slime')
+        .reduce((sum, monster) => sum + monster.count, 0);
+      const remaining = slimeCount > 0 ? {} : { Slime: 1 };
+
+      return {
+        targetMonster: targetMonsterId,
+        isPossible: true,
+        steps: [],
+        missingMonsters: [],
+        baseRequirements: { Slime: 1 },
+        remainingRequirements: remaining,
+        totalBaseRequired: 1,
+        totalRemaining: slimeCount > 0 ? 0 : 1,
+        tree: {
+          kind: 'monster',
+          value: targetMonsterId,
+          left: { kind: 'family', value: 'Any Slime' },
+          right: { kind: 'family', value: 'Any Slime' }
+        }
+      };
+    }
   }
 }));
 
@@ -171,4 +206,46 @@ test('hatching an egg applies the entered nickname', async () => {
     expect(screen.getByText('[Slibo]')).toBeInTheDocument();
   });
   expect(screen.queryByText('[Egg]')).not.toBeInTheDocument();
+});
+
+test('planner totals in key interface update when adding a monster from collection', async () => {
+  localStorage.setItem('dwm2-breeding-planner-data', JSON.stringify({
+    userMonsters: [],
+    ownedMonsters: [],
+    ownedKeys: [{ id: 'k1', descriptor: 'Plain', family: 'Slime' }],
+    ownedStoryKeyWorlds: [],
+    plannerProgressByGoal: {},
+    uiState: {
+      activeTab: 'planner',
+      selectedGoals: ['spotking'],
+      plannerSeedMonsterIds: null
+    },
+    lastUpdated: new Date().toISOString()
+  }));
+
+  render(<App />);
+
+  await waitFor(() => {
+    expect(screen.getByRole('button', { name: 'Goal Planner' })).toBeInTheDocument();
+  });
+
+  fireEvent.click(screen.getByRole('button', { name: 'My Collection' }));
+
+  const findTotalsLine = () => screen.getByText((_content, node) => {
+    if (!node || node.tagName !== 'P') {
+      return false;
+    }
+    return (node.textContent || '').includes('Remaining after checked nodes:');
+  });
+
+  expect(findTotalsLine()).toHaveTextContent('Remaining after checked nodes: 1 (1 Slime (1 unassigned))');
+
+  fireEvent.change(screen.getByPlaceholderText('Choose species...'), {
+    target: { value: 'Slime' }
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Add to Stable' }));
+
+  await waitFor(() => {
+    expect(findTotalsLine()).toHaveTextContent('Remaining after checked nodes: 0 (None)');
+  });
 });

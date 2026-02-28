@@ -60,7 +60,8 @@ export const computeAdjustedRemaining = (
   remainingRequirements: Record<string, number> | undefined,
   checkedCoverage: Record<string, number>
 ): Record<string, number> => {
-  const baseRemaining = { ...(baseRequirements || remainingRequirements || {}) };
+  const hasRemainingRequirements = !!remainingRequirements && Object.keys(remainingRequirements).length > 0;
+  const baseRemaining = { ...(hasRemainingRequirements ? remainingRequirements : (baseRequirements || {})) };
   Object.entries(checkedCoverage).forEach(([family, covered]) => {
     baseRemaining[family] = Math.max(0, (baseRemaining[family] || 0) - covered);
     if (baseRemaining[family] === 0) {
@@ -124,17 +125,44 @@ export const computeRemainingGenderRequirements = (
 
 export const combineRemainingByFamilyGender = (
   remainingGenderRequirementsByFamily: Record<string, FamilyGenderCounts>,
-  adjustedRemaining: Record<string, number>
+  adjustedRemaining: Record<string, number>,
+  options?: {
+    useTreeFallbackWhenAdjustedEmpty?: boolean;
+  }
 ): Record<string, FamilyGenderCounts> => {
-  if (Object.keys(remainingGenderRequirementsByFamily).length > 0) {
-    return remainingGenderRequirementsByFamily;
+  if (Object.keys(adjustedRemaining).length === 0) {
+    return options?.useTreeFallbackWhenAdjustedEmpty
+      ? { ...remainingGenderRequirementsByFamily }
+      : {};
   }
 
-  const fallback: Record<string, FamilyGenderCounts> = {};
-  Object.entries(adjustedRemaining).forEach(([family, count]) => {
-    fallback[family] = { total: count, male: 0, female: 0, unassigned: count };
+  const combined: Record<string, FamilyGenderCounts> = {};
+  const families = new Set([
+    ...Object.keys(adjustedRemaining),
+    ...Object.keys(remainingGenderRequirementsByFamily)
+  ]);
+
+  families.forEach((family) => {
+    const count = adjustedRemaining[family] ?? 0;
+    const hinted = remainingGenderRequirementsByFamily[family];
+    const minGenderRequired = hinted ? hinted.male + hinted.female : 0;
+    const effectiveCount = count > 0 ? count : minGenderRequired;
+
+    if (effectiveCount <= 0) {
+      return;
+    }
+
+    if (!hinted) {
+      combined[family] = { total: effectiveCount, male: 0, female: 0, unassigned: effectiveCount };
+      return;
+    }
+
+    const male = Math.min(hinted.male, effectiveCount);
+    const female = Math.min(hinted.female, Math.max(0, effectiveCount - male));
+    const unassigned = Math.max(0, effectiveCount - male - female);
+    combined[family] = { total: effectiveCount, male, female, unassigned };
   });
-  return fallback;
+  return combined;
 };
 
 export const renderFamilyGenderRequirements = (

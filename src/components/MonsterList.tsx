@@ -4,6 +4,14 @@ import { MONSTERS, getBreedingResult, getMonsterById } from '../data/monsters';
 import { KEY_DESCRIPTORS, KEY_FAMILY_BY_CODE, KEY_FAMILY_OPTIONS } from '../data/keys';
 import { loadPlannerProgress } from '../utils/storage';
 import { optimizeOwnedKeysForCoverage } from '../utils/keyOptimizer';
+import {
+  FamilyGenderCounts,
+  collectCheckedCoverage,
+  combineRemainingByFamilyGender,
+  computeAdjustedRemaining,
+  computeRemainingGenderRequirements,
+  renderFamilyGenderRequirements
+} from '../utils/breedingPlanTree';
 import { Plus, Trash2 } from 'lucide-react';
 
 interface MonsterListProps {
@@ -527,56 +535,10 @@ export const MonsterList: React.FC<MonsterListProps> = ({
     return Array.from(families).sort((a, b) => a.localeCompare(b));
   }, [ownedKeys, ownedStoryKeyWorlds, storyKeyWorlds]);
 
-  const keySuggestions = useMemo(() => {
-    if (selectedGoals.length === 0 || ownedKeys.length === 0) {
-      return [];
-    }
-
+  const plannerTotals = useMemo(() => {
     const plannerSeedKey = (plannerSeedMonsterIds || []).slice().sort().join(',');
     const neededByFamily: Record<string, number> = {};
-    const addCounts = (target: Record<string, number>, source: Record<string, number>) => {
-      Object.entries(source).forEach(([family, count]) => {
-        target[family] = (target[family] || 0) + count;
-      });
-    };
-
-    const collectBaseRequirementsFromNode = (node: NonNullable<BreedingPlan['tree']>): Record<string, number> => {
-      if (node.kind === 'family') {
-        return { [node.value.replace(/^Any\s+/i, '')]: 1 };
-      }
-
-      const totals: Record<string, number> = {};
-      if (node.left) {
-        addCounts(totals, collectBaseRequirementsFromNode(node.left));
-      }
-      if (node.right) {
-        addCounts(totals, collectBaseRequirementsFromNode(node.right));
-      }
-      return totals;
-    };
-
-    const collectCheckedCoverage = (
-      node: NonNullable<BreedingPlan['tree']>,
-      checkedNodes: Set<string>,
-      path: string
-    ): Record<string, number> => {
-      if (checkedNodes.has(path)) {
-        return collectBaseRequirementsFromNode(node);
-      }
-
-      if (node.kind === 'family') {
-        return {};
-      }
-
-      const totals: Record<string, number> = {};
-      if (node.left) {
-        addCounts(totals, collectCheckedCoverage(node.left, checkedNodes, `${path}.L`));
-      }
-      if (node.right) {
-        addCounts(totals, collectCheckedCoverage(node.right, checkedNodes, `${path}.R`));
-      }
-      return totals;
-    };
+    const byFamily: Record<string, FamilyGenderCounts> = {};
 
     selectedGoals.forEach((goalId) => {
       const plan = breedingPlans[goalId];
@@ -584,27 +546,56 @@ export const MonsterList: React.FC<MonsterListProps> = ({
         return;
       }
 
-      const baseRemaining = { ...(plan.baseRequirements || plan.remainingRequirements || {}) };
       const goalStateKey = `${goalId}::${plannerSeedKey}`;
       const progress = loadPlannerProgress(goalStateKey);
       const checkedNodes = new Set(progress?.checkedNodes || []);
+      const checkedNodeGenders = progress?.checkedNodeGenders || {};
 
-      if (plan.tree && checkedNodes.size > 0) {
-        const checkedCoverage = collectCheckedCoverage(plan.tree, checkedNodes, 'root');
-        Object.entries(checkedCoverage).forEach(([family, covered]) => {
-          baseRemaining[family] = Math.max(0, (baseRemaining[family] || 0) - covered);
-          if (baseRemaining[family] === 0) {
-            delete baseRemaining[family];
-          }
-        });
-      }
+      const checkedCoverage = collectCheckedCoverage(plan.tree, checkedNodes);
+      const sourceRemaining = { ...(plan.remainingRequirements ?? plan.baseRequirements ?? {}) };
+      Object.entries(checkedCoverage).forEach(([family, covered]) => {
+        sourceRemaining[family] = Math.max(0, (sourceRemaining[family] || 0) - covered);
+        if (sourceRemaining[family] === 0) {
+          delete sourceRemaining[family];
+        }
+      });
+      const remainingByGender = computeRemainingGenderRequirements(
+        plan.tree,
+        checkedNodes,
+        checkedNodeGenders
+      );
+      const hasRequirementData = (
+        (!!plan.baseRequirements && Object.keys(plan.baseRequirements).length > 0) ||
+        (!!plan.remainingRequirements && Object.keys(plan.remainingRequirements).length > 0)
+      );
+      const combinedRemaining = combineRemainingByFamilyGender(
+        remainingByGender,
+        sourceRemaining,
+        { useTreeFallbackWhenAdjustedEmpty: !hasRequirementData }
+      );
 
-      const requirements = baseRemaining;
-      Object.entries(requirements).forEach(([family, count]) => {
-        neededByFamily[family] = (neededByFamily[family] || 0) + count;
+      Object.entries(combinedRemaining).forEach(([family, counts]) => {
+        const existing = byFamily[family] || { total: 0, male: 0, female: 0, unassigned: 0 };
+        byFamily[family] = {
+          total: existing.total + counts.total,
+          male: existing.male + counts.male,
+          female: existing.female + counts.female,
+          unassigned: existing.unassigned + counts.unassigned
+        };
+        neededByFamily[family] = (neededByFamily[family] || 0) + counts.total;
       });
     });
 
+    const totalRemaining = Object.values(byFamily).reduce((sum, counts) => sum + counts.total, 0);
+    return { byFamily, neededByFamily, totalRemaining };
+  }, [selectedGoals, breedingPlans, plannerSeedMonsterIds]);
+
+  const keySuggestions = useMemo(() => {
+    if (selectedGoals.length === 0 || ownedKeys.length === 0) {
+      return [];
+    }
+
+    const neededByFamily = plannerTotals.neededByFamily;
     const rarityByDescriptor = new Map(KEY_DESCRIPTORS.map((descriptor, index) => [descriptor, index]));
 
     return ownedKeys
@@ -633,7 +624,7 @@ export const MonsterList: React.FC<MonsterListProps> = ({
         const bName = `${b.descriptor} ${b.family}`;
         return aName.localeCompare(bName);
       });
-  }, [selectedGoals, ownedKeys, breedingPlans, plannerSeedMonsterIds]);
+  }, [selectedGoals, ownedKeys, plannerTotals]);
 
   const keyOptimization = useMemo(
     () => optimizeOwnedKeysForCoverage(ownedKeys),
@@ -994,6 +985,16 @@ export const MonsterList: React.FC<MonsterListProps> = ({
               {keyOptimization.dropKeys.length > 0
                 ? keyOptimization.dropKeys.map(formatKeyName).join(', ')
                 : 'None'}
+            </p>
+          </div>
+        )}
+
+        {selectedGoals.length > 0 && (
+          <div className="key-suggestions">
+            <h4>Planner Totals for Current Goal(s)</h4>
+            <p>
+              <strong>Remaining after checked nodes:</strong>{' '}
+              {plannerTotals.totalRemaining} ({renderFamilyGenderRequirements(plannerTotals.byFamily)})
             </p>
           </div>
         )}

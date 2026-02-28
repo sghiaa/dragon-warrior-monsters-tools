@@ -329,4 +329,30 @@ describe('BreedingPathfinder', () => {
       result: 'deterministicmon'
     });
   });
+
+  it('returns the same tree on repeated runs for identical inputs', () => {
+    const pathfinder = new BreedingPathfinder(emptyOwned);
+
+    const first = pathfinder.findBreedingPath('choicemonster');
+    const second = pathfinder.findBreedingPath('choicemonster');
+
+    expect(first.tree).toEqual(second.tree);
+    expect(first.steps).toEqual(second.steps);
+    expect(first.remainingRequirements).toEqual(second.remainingRequirements);
+  });
+
+  it('returns the same tree across fresh instances for identical inputs', () => {
+    const owned: UserMonster[] = [
+      { monsterId: 'owned_beast', count: 1, maleCount: 1, femaleCount: 0 },
+      { monsterId: 'owned_devil', count: 1, maleCount: 1, femaleCount: 0 },
+      { monsterId: 'owned_dragon', count: 1, maleCount: 1, femaleCount: 0 }
+    ];
+
+    const first = new BreedingPathfinder(owned).findBreedingPath('choicemonster');
+    const second = new BreedingPathfinder(owned).findBreedingPath('choicemonster');
+
+    expect(first.tree).toEqual(second.tree);
+    expect(first.steps).toEqual(second.steps);
+    expect(first.remainingRequirements).toEqual(second.remainingRequirements);
+  });
 });

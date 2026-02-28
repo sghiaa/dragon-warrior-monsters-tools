@@ -188,10 +188,6 @@ function App() {
   }, [dataLoaded, isPlannerTabActive, userMonsters, plannerSeedMonsterIds]);
 
   useEffect(() => {
-    if (!isPlannerTabActive) {
-      return;
-    }
-
     if (selectedGoals.length === 0) {
       setBreedingPlans({});
       return;
@@ -205,7 +201,7 @@ function App() {
       nextPlans[goalId] = pathfinder.findBreedingPath(goalId);
     });
     setBreedingPlans(nextPlans);
-  }, [selectedGoals, userMonsters, plannerSeedMonsterIds, isPlannerTabActive]);
+  }, [selectedGoals, userMonsters, plannerSeedMonsterIds]);
 
   const handleOwnedMonsterAdd = (
     monsterId: string,
